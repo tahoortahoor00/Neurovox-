@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NeuroVox — App Prototype</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Sora:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --nv-bg:#0A2342;--nv-teal:#0D7C7C;--nv-teal2:#14A8A8;
+  --nv-accent:#FF6B35;--nv-light:#E8F7F7;--nv-white:#FFFFFF;
+  --nv-card:#F4FBFB;--nv-muted:#5A7A8A;--nv-navy2:#102A3E;
+}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:#0f1923;}
+.page{
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:24px 16px;gap:16px;
+  background:radial-gradient(ellipse at 30% 20%, #0D3A5C 0%, #0f1923 60%);
+}
+.top-bar{
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.top-title{
+  font-family:'Sora',sans-serif;font-size:22px;font-weight:700;
+  color:#fff;letter-spacing:-0.3px;text-align:center;
+}
+.top-sub{font-size:13px;color:rgba(255,255,255,0.45);text-align:center;}
+
+.lang-bar{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
+.lang-btn{
+  padding:5px 13px;border-radius:20px;border:1.5px solid #0D7C7C;
+  background:transparent;color:#14A8A8;font-family:'DM Sans',sans-serif;
+  font-size:12px;cursor:pointer;transition:all 0.2s;
+}
+.lang-btn.active{background:#0D7C7C;color:#fff;}
+
+.phone-frame{
+  width:320px;height:620px;border-radius:36px;
+  background:#1a1a2e;padding:12px;
+  box-shadow:0 32px 80px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.07),
+             inset 0 0 0 1px rgba(255,255,255,0.04);
+  position:relative;flex-shrink:0;
+}
+.phone-notch{
+  width:80px;height:22px;background:#1a1a2e;border-radius:0 0 14px 14px;
+  position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  z-index:10;display:flex;align-items:center;justify-content:center;gap:5px;
+}
+.notch-cam{width:8px;height:8px;border-radius:50%;background:#111122;}
+.notch-speaker{width:28px;height:4px;border-radius:4px;background:#111122;}
+.screen{
+  width:100%;height:100%;border-radius:26px;overflow:hidden;
+  position:relative;background:white;
+}
+.slide{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  display:none;flex-direction:column;overflow-y:auto;overflow-x:hidden;
+}
+.slide.active{display:flex;}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+/* SCREEN 1 SPLASH */
+.s-splash{
+  background:linear-gradient(160deg,#0A2342 0%,#0D5A7C 50%,#0D7C7C 100%);
+  align-items:center;justify-content:center;gap:0;
+}
+.splash-logo{
+  width:80px;height:80px;background:rgba(255,255,255,0.12);border-radius:22px;
+  display:flex;align-items:center;justify-content:center;margin-bottom:20px;
+  border:1.5px solid rgba(255,255,255,0.2);
+}
+.splash-logo svg{width:48px;height:48px;}
+.splash-title{font-family:'Sora',sans-serif;font-size:28px;font-weight:700;color:white;letter-spacing:-0.5px;}
+.splash-sub{font-size:13px;color:rgba(255,255,255,0.65);margin-top:4px;font-style:italic;}
+.splash-tagline{font-size:12px;color:rgba(255,255,255,0.45);margin-top:24px;text-align:center;padding:0 32px;line-height:1.6;}
+.splash-btn{
+  margin-top:36px;background:#FF6B35;color:white;border:none;
+  padding:14px 40px;border-radius:14px;font-family:'Sora',sans-serif;
+  font-size:15px;font-weight:600;cursor:pointer;transition:transform 0.15s;
+}
+.splash-btn:hover{transform:scale(1.03);}
+.splash-version{font-size:10px;color:rgba(255,255,255,0.2);margin-top:16px;}
+
+/* SCREEN 2 LANGUAGE */
+.s-lang{background:#F4FBFB;}
+.screen-header{background:#0A2342;padding:40px 20px 20px;color:white;}
+.screen-header h2{font-family:'Sora',sans-serif;font-size:18px;font-weight:600;}
+.screen-header p{font-size:12px;color:rgba(255,255,255,0.6);margin-top:4px;}
+.screen-body{flex:1;overflow-y:auto;padding:16px;}
+.lang-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.lang-card{
+  background:white;border:1.5px solid #E0EDEE;border-radius:14px;
+  padding:14px 12px;cursor:pointer;transition:all 0.2s;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+}
+.lang-card:hover,.lang-card.sel{border-color:#0D7C7C;background:#E8F7F7;}
+.lang-flag{font-size:22px;}
+.lang-native{font-size:16px;font-weight:500;color:#0A2342;}
+.lang-english{font-size:10px;color:#5A7A8A;}
+.lang-checkmark{
+  width:18px;height:18px;border-radius:50%;background:#0D7C7C;
+  display:none;align-items:center;justify-content:center;
+}
+.lang-card.sel .lang-checkmark{display:flex;}
+.bottom-btn{
+  margin:12px 16px 16px;background:#0A2342;color:white;border:none;
+  padding:14px;border-radius:14px;font-family:'Sora',sans-serif;font-size:14px;
+  font-weight:600;cursor:pointer;width:calc(100% - 32px);transition:background 0.2s;
+}
+.bottom-btn:hover{background:#0D5A7C;}
+.bottom-btn.teal{background:#0D7C7C;}
+.bottom-btn.teal:hover{background:#0A5A5A;}
+
+/* SCREEN 3 HOME */
+.s-home{background:#F4FBFB;}
+.home-header{
+  background:linear-gradient(135deg,#0A2342 0%,#0D5A7C 100%);
+  padding:36px 20px 24px;position:relative;overflow:hidden;
+}
+.home-header::after{
+  content:'';position:absolute;right:-20px;top:-20px;
+  width:100px;height:100px;border-radius:50%;background:rgba(13,124,124,0.3);
+}
+.home-greeting{font-size:12px;color:rgba(255,255,255,0.6);}
+.home-name{font-family:'Sora',sans-serif;font-size:20px;color:white;font-weight:600;margin-top:2px;}
+.home-streak{
+  margin-top:12px;background:rgba(255,255,255,0.1);border-radius:10px;
+  padding:8px 12px;display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;color:rgba(255,255,255,0.8);
+}
+.streak-dot{width:6px;height:6px;border-radius:50%;background:#14A8A8;}
+.section-title{font-size:12px;color:#5A7A8A;font-weight:500;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;}
+.quick-scan-card{
+  background:linear-gradient(135deg,#0D7C7C,#14A8A8);border-radius:16px;
+  padding:16px;color:white;cursor:pointer;margin-bottom:14px;
+  position:relative;overflow:hidden;transition:transform 0.15s;
+}
+.quick-scan-card:hover{transform:scale(1.01);}
+.qsc-title{font-family:'Sora',sans-serif;font-size:15px;font-weight:600;}
+.qsc-sub{font-size:11px;opacity:0.8;margin-top:3px;}
+.qsc-btn{
+  margin-top:12px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);
+  color:white;padding:8px 16px;border-radius:8px;font-size:12px;cursor:pointer;
+  font-family:'DM Sans',sans-serif;display:inline-block;
+}
+.qsc-icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);opacity:0.2;font-size:52px;}
+.disorders-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.disorder-chip{
+  background:white;border:1.5px solid #E0EDEE;border-radius:12px;
+  padding:10px;cursor:pointer;transition:all 0.15s;
+}
+.disorder-chip:hover{border-color:#0D7C7C;}
+.dc-icon{font-size:18px;margin-bottom:4px;}
+.dc-name{font-size:11px;font-weight:500;color:#0A2342;}
+.dc-desc{font-size:9px;color:#5A7A8A;margin-top:1px;}
+.last-scan-card{
+  background:white;border:1.5px solid #E0EDEE;border-radius:14px;
+  padding:12px;display:flex;align-items:center;gap:10px;
+}
+.lsc-dot{width:10px;height:10px;border-radius:50%;background:#14A8A8;flex-shrink:0;}
+.lsc-label{font-size:11px;color:#5A7A8A;}
+.lsc-val{font-size:13px;font-weight:500;color:#0A2342;}
+.lsc-badge{margin-left:auto;background:#E8F7F7;color:#0D7C7C;font-size:10px;padding:3px 8px;border-radius:6px;font-weight:500;}
+.navbar{display:flex;border-top:1px solid #E0EDEE;background:white;padding:8px 0 4px;flex-shrink:0;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 0;}
+.nav-icon{font-size:18px;}
+.nav-label{font-size:9px;color:#5A7A8A;}
+.nav-item.active .nav-label{color:#0D7C7C;}
+
+/* SCREEN 4 SCAN */
+.s-scan{background:#F4FBFB;}
+.scan-header{background:#0A2342;padding:36px 20px 20px;display:flex;align-items:center;gap:12px;}
+.back-btn{
+  width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.1);
+  border:none;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;
+}
+.scan-header h2{font-family:'Sora',sans-serif;font-size:16px;color:white;font-weight:600;}
+.task-progress{display:flex;gap:4px;padding:14px 20px 0;}
+.task-dot{flex:1;height:4px;border-radius:4px;background:#E0EDEE;}
+.task-dot.done{background:#0D7C7C;}
+.task-dot.active{background:#14A8A8;}
+.task-card{margin:14px 16px;background:white;border:1.5px solid #E0EDEE;border-radius:16px;padding:16px;}
+.task-num{font-size:10px;color:#5A7A8A;font-weight:500;text-transform:uppercase;letter-spacing:0.5px;}
+.task-title{font-family:'Sora',sans-serif;font-size:15px;color:#0A2342;margin-top:4px;font-weight:600;}
+.task-instruction{font-size:12px;color:#5A7A8A;margin-top:6px;line-height:1.5;}
+.task-example{margin-top:10px;background:#F4FBFB;border-radius:10px;padding:10px 12px;font-size:13px;color:#0A2342;font-style:italic;border-left:3px solid #0D7C7C;}
+.mic-area{display:flex;flex-direction:column;align-items:center;padding:20px;gap:12px;}
+.mic-ring{
+  width:90px;height:90px;border-radius:50%;background:#E8F7F7;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;cursor:pointer;transition:transform 0.15s;
+}
+.mic-ring:hover{transform:scale(1.05);}
+.mic-ring.recording{background:#FFE8E0;animation:pulse 1.2s ease-in-out infinite;}
+@keyframes pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,107,53,0.3);}
+  50%{box-shadow:0 0 0 16px rgba(255,107,53,0);}
+}
+.mic-btn{
+  width:60px;height:60px;border-radius:50%;background:#0D7C7C;
+  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;
+}
+.mic-ring.recording .mic-btn{background:#FF6B35;}
+.mic-status{font-size:12px;color:#5A7A8A;}
+.mic-timer{font-family:'Sora',sans-serif;font-size:22px;font-weight:600;color:#0A2342;}
+.waveform{display:flex;align-items:center;gap:3px;height:30px;padding:0 8px;}
+.wave-bar{width:3px;border-radius:3px;background:#0D7C7C;transition:height 0.1s;}
+
+/* SCREEN 5 QUESTIONNAIRE */
+.s-quest{background:#F4FBFB;}
+.quest-body{flex:1;overflow-y:auto;padding:14px 16px;}
+.q-card{background:white;border:1.5px solid #E0EDEE;border-radius:14px;padding:14px;margin-bottom:10px;}
+.q-text{font-size:13px;color:#0A2342;line-height:1.5;font-weight:500;}
+.q-options{display:flex;gap:8px;margin-top:10px;}
+.q-opt{
+  flex:1;padding:8px;border:1.5px solid #E0EDEE;border-radius:10px;
+  text-align:center;font-size:12px;cursor:pointer;transition:all 0.15s;
+  color:#5A7A8A;background:transparent;font-family:'DM Sans',sans-serif;
+}
+.q-opt.selected{background:#E8F7F7;border-color:#0D7C7C;color:#0D7C7C;font-weight:500;}
+.step-indicators{display:flex;gap:6px;justify-content:center;padding:10px 0 4px;}
+.step-dot{width:7px;height:7px;border-radius:50%;background:#E0EDEE;}
+.step-dot.active{background:#0D7C7C;width:18px;border-radius:4px;}
+
+/* SCREEN 6 RESULT */
+.s-result{background:#F4FBFB;}
+.result-header{background:linear-gradient(135deg,#0A2342 0%,#0D5A7C 100%);padding:36px 20px 28px;text-align:center;}
+.result-badge{
+  display:inline-block;background:rgba(20,168,168,0.2);
+  border:1px solid rgba(20,168,168,0.4);color:#4DD8D8;
+  font-size:11px;padding:4px 12px;border-radius:20px;margin-bottom:12px;
+}
+.result-name{font-family:'Sora',sans-serif;font-size:18px;color:white;font-weight:700;}
+.result-sub{font-size:11px;color:rgba(255,255,255,0.55);margin-top:4px;}
+.disorder-results{padding:0 16px;margin-top:14px;display:flex;flex-direction:column;gap:8px;}
+.dr-row{background:white;border:1.5px solid #E0EDEE;border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;}
+.dr-name{font-size:12px;color:#0A2342;font-weight:500;flex:1;}
+.dr-bar-wrap{flex:1.5;height:6px;background:#E0EDEE;border-radius:6px;overflow:hidden;}
+.dr-bar{height:100%;border-radius:6px;}
+.dr-low{background:#14A8A8;}
+.dr-med{background:#FF6B35;}
+.dr-pct{font-size:11px;font-weight:600;min-width:32px;text-align:right;}
+.pct-low{color:#0D7C7C;}
+.pct-med{color:#FF6B35;}
+.referral-card{
+  margin:10px 16px;background:linear-gradient(135deg,#FF6B35,#FF9050);
+  border-radius:14px;padding:14px;color:white;cursor:pointer;
+}
+.ref-title{font-family:'Sora',sans-serif;font-size:13px;font-weight:600;}
+.ref-desc{font-size:11px;opacity:0.85;margin-top:3px;}
+.ref-cta{margin-top:10px;background:rgba(255,255,255,0.2);border-radius:8px;padding:7px 14px;font-size:12px;display:inline-block;}
+.disclaimer{margin:0 16px 16px;font-size:9.5px;color:#5A7A8A;line-height:1.5;text-align:center;}
+
+/* SCREEN NAV BUTTONS */
+.screen-nav{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
+.snav-btn{
+  padding:6px 12px;border-radius:8px;
+  border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);
+  color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all 0.15s;
+}
+.snav-btn:hover{background:rgba(255,255,255,0.15);color:white;}
+.snav-btn.cur{background:#0D7C7C;border-color:#0D7C7C;color:white;}
+
+.footer-note{font-size:11px;color:rgba(255,255,255,0.2);text-align:center;}
+
+/* ── MODAL OVERLAY (shared by consent + disorder info) ── */
+.modal-overlay{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  background:rgba(10,35,66,0.82);z-index:200;
+  display:none;align-items:flex-end;justify-content:center;
+}
+.modal-overlay.open{display:flex;}
+.modal-sheet{background:#fff;border-radius:22px 22px 0 0;width:100%;max-height:88%;overflow-y:auto;padding:0 0 24px;}
+.modal-handle{width:36px;height:4px;background:#E0EDEE;border-radius:4px;margin:10px auto 0;}
+.modal-header{padding:14px 18px 10px;border-bottom:1px solid #F0F5F5;display:flex;align-items:center;gap:10px;}
+.modal-header-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.modal-title{font-family:'Sora',sans-serif;font-size:15px;font-weight:600;color:#0A2342;}
+.modal-subtitle{font-size:10px;color:#5A7A8A;margin-top:1px;}
+.modal-body{padding:14px 18px 0;}
+.modal-close{margin-left:auto;width:28px;height:28px;border-radius:8px;background:#F0F5F5;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:#5A7A8A;flex-shrink:0;}
+/* CONSENT */
+.consent-section{margin-bottom:12px;}
+.consent-section-title{font-size:10px;font-weight:600;color:#0D7C7C;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px;}
+.consent-text{font-size:11px;color:#2A4A5A;line-height:1.65;}
+.consent-check-row{display:flex;align-items:flex-start;gap:10px;background:#F4FBFB;border:1.5px solid #E0EDEE;border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;}
+.consent-check-row.required{border-color:#0D7C7C;}
+.consent-checkbox{width:18px;height:18px;border-radius:5px;border:1.5px solid #C0D8DA;background:#fff;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.consent-check-row.checked .consent-checkbox{background:#0D7C7C;border-color:#0D7C7C;}
+.consent-check-label{font-size:11px;color:#0A2342;line-height:1.5;}
+.consent-check-label strong{color:#0A2342;font-weight:600;}
+.consent-check-label span{color:#5A7A8A;font-size:10px;display:block;margin-top:1px;}
+.consent-legal-box{background:#FFF8F0;border:1px solid #FFD8B0;border-radius:10px;padding:10px 12px;margin-bottom:10px;}
+.consent-legal-box p{font-size:10px;color:#7A4A10;line-height:1.6;}
+.consent-proceed-btn{width:100%;padding:13px;background:#0A2342;color:#fff;border:none;border-radius:13px;font-family:'Sora',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.2s;}
+.consent-proceed-btn:disabled{background:#C0D0DA;cursor:not-allowed;}
+.consent-proceed-btn:not(:disabled):hover{background:#0D5A7C;}
+/* DISORDER INFO */
+.dis-badge{display:inline-block;font-size:9px;font-weight:600;padding:2px 8px;border-radius:6px;margin-bottom:8px;}
+.dis-section{margin-bottom:12px;}
+.dis-section-title{font-size:10px;font-weight:600;color:#0D7C7C;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px;}
+.dis-symptom-list{display:flex;flex-direction:column;gap:5px;}
+.dis-symptom{display:flex;align-items:flex-start;gap:8px;font-size:11px;color:#2A4A5A;line-height:1.5;}
+.dis-symptom-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.dis-voice-box{background:#E8F7F7;border-radius:10px;padding:10px 12px;border-left:3px solid #0D7C7C;}
+.dis-voice-box p{font-size:11px;color:#0A3A3A;line-height:1.6;}
+.dis-voice-box strong{color:#0D7C7C;}
+.dis-stat{background:#F4FBFB;border:1px solid #E0EDEE;border-radius:8px;padding:7px 10px;font-size:10px;color:#5A7A8A;margin-top:6px;}
+/* QUESTIONNAIRE */
+.q-section-label{font-size:9px;font-weight:600;color:#0D7C7C;text-transform:uppercase;letter-spacing:0.8px;margin:10px 0 6px;padding:0 2px;}
+.q-card{background:white;border:1.5px solid #E0EDEE;border-radius:14px;padding:13px;margin-bottom:8px;}
+.q-text{font-size:12px;color:#0A2342;line-height:1.5;font-weight:500;}
+.q-note{font-size:10px;color:#5A7A8A;margin-top:3px;line-height:1.4;font-style:italic;}
+.q-options{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;}
+.q-opt{flex:1;min-width:0;padding:6px 4px;border:1.5px solid #E0EDEE;border-radius:9px;text-align:center;font-size:10px;cursor:pointer;transition:all 0.15s;color:#5A7A8A;background:transparent;font-family:'DM Sans',sans-serif;word-break:break-word;hyphens:auto;line-height:1.3;}
+.q-opt.selected{background:#E8F7F7;border-color:#0D7C7C;color:#0D7C7C;font-weight:500;}
+.q-confound{border-left:3px solid #FF6B35;}
+.q-confound .q-text{color:#6A3000;}
+.confound-badge{display:inline-block;background:#FFF0E8;color:#CC4400;font-size:9px;font-weight:600;padding:2px 6px;border-radius:5px;margin-bottom:4px;}
+
+
+/* AUDIO ANALYSIS ADDITIONS */
+#specCanvas{width:100%;height:48px;border-radius:8px;display:block;background:#0A1A28;}
+.feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 16px 0;}
+.feat-card{background:white;border:1.5px solid #E0EDEE;border-radius:10px;padding:8px 10px;}
+.feat-label{font-size:9px;color:#5A7A8A;text-transform:uppercase;letter-spacing:0.6px;}
+.feat-val{font-family:'Sora',sans-serif;font-size:16px;font-weight:600;color:#0A2342;margin-top:1px;}
+.feat-unit{font-size:9px;color:#5A7A8A;font-weight:400;}
+.feat-bar-wrap{height:4px;background:#E0EDEE;border-radius:4px;margin-top:5px;overflow:hidden;}
+.feat-bar-fill{height:100%;border-radius:4px;background:#0D7C7C;transition:width 0.3s;}
+.quality-row{display:flex;align-items:center;gap:8px;margin:8px 16px 0;padding:8px 10px;background:white;border:1.5px solid #E0EDEE;border-radius:10px;}
+.quality-dot{width:8px;height:8px;border-radius:50%;background:#E0EDEE;flex-shrink:0;}
+.quality-dot.good{background:#14A8A8;}
+.quality-dot.warn{background:#FF6B35;}
+.quality-dot.bad{background:#cc3300;}
+.quality-label{font-size:11px;color:#5A7A8A;flex:1;}
+.quality-val{font-size:11px;font-weight:500;color:#0A2342;}
+.snr-display{font-size:10px;color:#0D7C7C;font-weight:500;}
+.raw-features-section{margin:10px 16px 0;}
+.raw-toggle{font-size:10px;color:#0D7C7C;cursor:pointer;text-decoration:underline;}
+.raw-box{background:#F0F8F8;border-radius:8px;padding:8px;margin-top:6px;display:none;font-size:9px;color:#2A5A5A;font-family:monospace;line-height:1.7;word-break:break-all;}
+.analysis-spinner{display:flex;align-items:center;gap:8px;justify-content:center;padding:20px;}
+.spin-ring{width:20px;height:20px;border:2px solid #E0EDEE;border-top-color:#0D7C7C;border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.task-complete-badge{display:inline-flex;align-items:center;gap:4px;background:#E8F7F7;color:#0D7C7C;font-size:10px;padding:3px 8px;border-radius:6px;margin-top:6px;}
+.mic-error{font-size:11px;color:#cc4400;text-align:center;padding:4px 12px;background:#FFF0EC;border-radius:8px;margin:0 16px;}
+
+/* DR row real values */
+.dr-actual{font-size:9px;color:#5A7A8A;margin-top:2px;}
+.voice-summary-card{margin:10px 16px 0;background:white;border:1.5px solid #E0EDEE;border-radius:12px;padding:12px;}
+.vsc-title{font-size:10px;font-weight:500;color:#5A7A8A;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;}
+.vsc-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #F0F5F5;}
+.vsc-row:last-child{border-bottom:none;}
+.vsc-key{font-size:11px;color:#5A7A8A;}
+.vsc-val{font-size:11px;font-weight:600;color:#0A2342;font-family:'Sora',sans-serif;}
+.vsc-note{font-size:9px;color:#14A8A8;margin-left:4px;}
+
+.modal-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(10,35,66,0.82);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-sheet{background:#fff;border-radius:22px 22px 0 0;width:100%;max-height:88%;overflow-y:auto;padding:0 0 24px;}
+.modal-handle{width:36px;height:4px;background:#E0EDEE;border-radius:4px;margin:10px auto 0;}
+.modal-header{padding:14px 18px 10px;border-bottom:1px solid #F0F5F5;display:flex;align-items:center;gap:10px;}
+.modal-header-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.modal-title{font-family:'Sora',sans-serif;font-size:15px;font-weight:600;color:#0A2342;}
+.modal-subtitle{font-size:10px;color:#5A7A8A;margin-top:1px;}
+.modal-body{padding:14px 18px 0;}
+.modal-close{margin-left:auto;width:28px;height:28px;border-radius:8px;background:#F0F5F5;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:#5A7A8A;flex-shrink:0;}
+.consent-section{margin-bottom:12px;}.consent-section-title{font-size:10px;font-weight:600;color:#0D7C7C;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px;}
+.consent-text{font-size:11px;color:#2A4A5A;line-height:1.65;}
+.consent-check-row{display:flex;align-items:flex-start;gap:10px;background:#F4FBFB;border:1.5px solid #E0EDEE;border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;}
+.consent-check-row.required{border-color:#0D7C7C;}.consent-checkbox{width:18px;height:18px;border-radius:5px;border:1.5px solid #C0D8DA;background:#fff;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.consent-check-row.checked .consent-checkbox{background:#0D7C7C;border-color:#0D7C7C;}
+.consent-check-label{font-size:11px;color:#0A2342;line-height:1.5;}.consent-check-label strong{font-weight:600;}.consent-check-label span{color:#5A7A8A;font-size:10px;display:block;margin-top:1px;}
+.consent-legal-box{background:#FFF8F0;border:1px solid #FFD8B0;border-radius:10px;padding:10px 12px;margin-bottom:10px;}.consent-legal-box p{font-size:10px;color:#7A4A10;line-height:1.6;}
+.consent-proceed-btn{width:100%;padding:13px;background:#0A2342;color:#fff;border:none;border-radius:13px;font-family:'Sora',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+.consent-proceed-btn:disabled{background:#C0D0DA;cursor:not-allowed;}.consent-proceed-btn:not(:disabled):hover{background:#0D5A7C;}
+.dis-badge{display:inline-block;font-size:9px;font-weight:600;padding:2px 8px;border-radius:6px;margin-bottom:8px;}
+.dis-section{margin-bottom:12px;}.dis-section-title{font-size:10px;font-weight:600;color:#0D7C7C;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px;}
+.dis-symptom-list{display:flex;flex-direction:column;gap:5px;}.dis-symptom{display:flex;align-items:flex-start;gap:8px;font-size:11px;color:#2A4A5A;line-height:1.5;}
+.dis-symptom-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.dis-voice-box{background:#E8F7F7;border-radius:10px;padding:10px 12px;border-left:3px solid #0D7C7C;}.dis-voice-box p{font-size:11px;color:#0A3A3A;line-height:1.6;}.dis-voice-box strong{color:#0D7C7C;}
+.dis-stat{background:#F4FBFB;border:1px solid #E0EDEE;border-radius:8px;padding:7px 10px;font-size:10px;color:#5A7A8A;margin-top:6px;}
+.dc-learn{font-size:9px;color:#14A8A8;margin-top:3px;}
+.q-section-label{font-size:9px;font-weight:600;color:#0D7C7C;text-transform:uppercase;letter-spacing:0.8px;margin:10px 0 6px;padding:0 2px;}
+.q-card{background:white;border:1.5px solid #E0EDEE;border-radius:14px;padding:13px;margin-bottom:8px;}
+.q-text{font-size:12px;color:#0A2342;line-height:1.5;font-weight:500;}
+.q-note{font-size:10px;color:#5A7A8A;margin-top:3px;line-height:1.4;font-style:italic;}
+.q-options{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;}
+.q-opt{flex:1;min-width:52px;padding:7px 4px;border:1.5px solid #E0EDEE;border-radius:9px;text-align:center;font-size:11px;cursor:pointer;transition:all 0.15s;color:#5A7A8A;background:transparent;font-family:'DM Sans',sans-serif;}
+.q-opt.selected{background:#E8F7F7;border-color:#0D7C7C;color:#0D7C7C;font-weight:500;}
+.q-confound{border-left:3px solid #FF6B35;}.q-confound .q-text{color:#6A3000;}
+.confound-badge{display:inline-block;background:#FFF0E8;color:#CC4400;font-size:9px;font-weight:600;padding:2px 6px;border-radius:5px;margin-bottom:4px;}
+.qs-row{display:flex;justify-content:space-between;align-items:flex-start;padding:5px 10px;border-radius:8px;gap:8px;margin-bottom:4px;}
+.qs-key{font-size:10px;color:#5A7A8A;line-height:1.4;flex:1;}.qs-val{font-size:10px;font-weight:600;text-align:right;flex-shrink:0;max-width:110px;}
+.feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 16px 0;}
+.feat-card{background:white;border:1.5px solid #E0EDEE;border-radius:10px;padding:8px 10px;}
+.feat-label{font-size:9px;color:#5A7A8A;text-transform:uppercase;letter-spacing:0.6px;}
+.feat-val{font-family:'Sora',sans-serif;font-size:16px;font-weight:600;color:#0A2342;margin-top:1px;}
+.feat-unit{font-size:9px;color:#5A7A8A;}
+.feat-bar-wrap{height:4px;background:#E0EDEE;border-radius:4px;margin-top:5px;overflow:hidden;}
+.feat-bar-fill{height:100%;border-radius:4px;background:#0D7C7C;transition:width 0.3s;}
+.quality-row{display:flex;align-items:center;gap:8px;margin:8px 16px 0;padding:8px 10px;background:white;border:1.5px solid #E0EDEE;border-radius:10px;}
+.quality-dot{width:8px;height:8px;border-radius:50%;background:#E0EDEE;flex-shrink:0;}
+.quality-dot.good{background:#14A8A8;}.quality-dot.warn{background:#FF6B35;}.quality-dot.bad{background:#cc3300;}
+.quality-label{font-size:11px;color:#5A7A8A;flex:1;}.quality-val{font-size:11px;font-weight:500;color:#0A2342;}
+.snr-display{font-size:10px;color:#0D7C7C;font-weight:500;}
+.mic-error{font-size:11px;color:#cc4400;text-align:center;padding:4px 12px;background:#FFF0EC;border-radius:8px;margin:0 16px;}
+.vsc-title{font-size:10px;font-weight:600;color:#0D7C7C;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;}
+.voice-summary-card{margin:10px 16px 0;background:white;border:1.5px solid #E0EDEE;border-radius:12px;padding:12px;}
+.vsc-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #F0F5F5;}
+.vsc-row:last-child{border-bottom:none;}
+.vsc-key{font-size:11px;color:#5A7A8A;}.vsc-val{font-size:11px;font-weight:600;color:#0A2342;font-family:'Sora',sans-serif;}
+
+
+/* FULLSCREEN MODE */
+.fullscreen-btn{
+  position:fixed;bottom:16px;right:16px;z-index:999;
+  width:44px;height:44px;border-radius:50%;
+  background:#0D7C7C;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(13,124,124,0.4);
+  transition:transform 0.15s;
+}
+.fullscreen-btn:hover{transform:scale(1.08);}
+.fullscreen-btn svg{width:20px;height:20px;}
+body.fs-mode .page{padding:0;background:#0f1923;}
+body.fs-mode .top-bar,
+body.fs-mode .lang-bar,
+body.fs-mode .screen-nav,
+body.fs-mode .footer-note{display:none!important;}
+body.fs-mode .phone-frame{
+  width:100vw;height:100dvh;max-width:420px;
+  border-radius:0;padding:0;
+  box-shadow:none;
+  margin:0 auto;
+}
+body.fs-mode .screen{border-radius:0;}
+body.fs-mode .page{justify-content:center;}
+@media(max-width:480px){
+  body.fs-mode .phone-frame{max-width:100vw;}
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="top-bar">
+    <svg viewBox="0 0 56 56" width="48" height="48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="28" cy="28" r="24" stroke="#14A8A8" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.5"/>
+      <circle cx="28" cy="28" r="19" stroke="#14A8A8" stroke-width="1.5" opacity="0.85"/>
+      <line x1="15" y1="8" x2="15" y2="12" stroke="#0D7C7C" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="13" y1="10" x2="17" y2="10" stroke="#0D7C7C" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="39" y1="34" x2="39" y2="38" stroke="#0D7C7C" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="37" y1="36" x2="41" y2="36" stroke="#0D7C7C" stroke-width="1.3" stroke-linecap="round"/>
+      <path d="M28 19 C25 17.5, 20 17.5, 18.5 20.5 C17 23, 17 25.5, 18.5 27 C17 28.5, 17 31.5, 19.5 33 C21 34.5, 24 34.5, 26 33 C26.5 34, 27.5 34.5, 28 34.5" stroke="#14A8A8" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+      <path d="M28 19 C31 17.5, 36 17.5, 37.5 20.5 C39 23, 39 25.5, 37.5 27 C39 28.5, 39 31.5, 36.5 33 C35 34.5, 32 34.5, 30 33 C29.5 34, 28.5 34.5, 28 34.5" stroke="#14A8A8" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+      <line x1="28" y1="19" x2="28" y2="34.5" stroke="#14A8A8" stroke-width="0.8" stroke-dasharray="2 2" opacity="0.6"/>
+      <path d="M20 23 C21.5 21.5, 24 22, 23.5 24.5" stroke="#0D9B9B" stroke-width="0.9" stroke-linecap="round" fill="none"/>
+      <path d="M36 23 C34.5 21.5, 32 22, 32.5 24.5" stroke="#0D9B9B" stroke-width="0.9" stroke-linecap="round" fill="none"/>
+      <path d="M23 38 Q25.5 40.5 28 38 Q30.5 35.5 33 38" stroke="#14A8A8" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.75"/>
+    </svg>
+    <div class="top-title">NeuroVox</div>
+    <div class="top-sub">The Voice of Your Brain</div>
+  </div>
+
+  <div class="lang-bar">
+    <span style="font-size:12px;color:rgba(255,255,255,0.4);line-height:2;">Language:</span>
+    <button class="lang-btn active" onclick="setLang('en',this)">English</button>
+    <button class="lang-btn" onclick="setLang('hi',this)">हिन्दी</button>
+    <button class="lang-btn" onclick="setLang('ta',this)">தமிழ்</button>
+    <button class="lang-btn" onclick="setLang('bn',this)">বাংলা</button>
+    <button class="lang-btn" onclick="setLang('te',this)">తెలుగు</button>
+    <button class="lang-btn" onclick="setLang('mr',this)">मराठी</button>
+  </div>
+
+  <div class="phone-frame">
+    <div class="phone-notch">
+      <div class="notch-cam"></div>
+      <div class="notch-speaker"></div>
+      <div class="notch-cam"></div>
+    </div>
+    <div class="screen">
+
+
+      <!-- CONSENT MODAL -->
+      <div class="modal-overlay" id="consentModal">
+        <div class="modal-sheet">
+          <div class="modal-handle"></div>
+          <div class="modal-header">
+            <div class="modal-header-icon" style="background:#E8F7F7;">🔒</div>
+            <div>
+              <div class="modal-title">Informed Consent</div>
+              <div class="modal-subtitle">Please read carefully before proceeding</div>
+            </div>
+          </div>
+          <div class="modal-body">
+            <div class="consent-section">
+              <div class="consent-section-title">Purpose of Data Collection</div>
+              <p class="consent-text">NeuroVox collects your voice recording and health questionnaire responses for the purpose of acoustic feature analysis and neurological disorder screening research. This is a prototype research tool developed at DPSRU and is <strong>not a certified medical device</strong>.</p>
+            </div>
+            <div class="consent-section">
+              <div class="consent-section-title">What We Collect</div>
+              <p class="consent-text">• Short voice recordings (up to 60 seconds)<br>• Acoustic feature data extracted from your voice<br>• Health history responses from the questionnaire<br>• Age group and language preference<br><br>Voice audio is processed on-device. Feature data (not raw audio) may be stored for research with your explicit consent below.</p>
+            </div>
+            <div class="consent-section">
+              <div class="consent-section-title">Your Rights (DPDP Act 2023)</div>
+              <p class="consent-text">Under the Digital Personal Data Protection Act, 2023 (India), you have the right to: access your data, correct inaccuracies, withdraw consent at any time, and request erasure.</p>
+            </div>
+            <div class="consent-legal-box">
+              <p><strong>Legal Notice:</strong> This tool is intended solely for research and educational purposes. It does not constitute medical advice, diagnosis, or treatment. Results must not be used as a substitute for professional clinical evaluation. By proceeding, you acknowledge these limitations.</p>
+            </div>
+            <div class="consent-check-row required" id="cr1" onclick="toggleConsent('cr1','cb1')">
+              <div class="consent-checkbox" id="cb1"></div>
+              <div class="consent-check-label">
+                <strong>I consent to voice recording and acoustic analysis</strong>
+                <span>Required to use the screening feature</span>
+              </div>
+            </div>
+            <div class="consent-check-row required" id="cr2" onclick="toggleConsent('cr2','cb2')">
+              <div class="consent-checkbox" id="cb2"></div>
+              <div class="consent-check-label">
+                <strong>I understand this is a research tool, not a medical diagnosis</strong>
+                <span>Results do not replace professional medical advice</span>
+              </div>
+            </div>
+            <div class="consent-check-row" id="cr3" onclick="toggleConsent('cr3','cb3')">
+              <div class="consent-checkbox" id="cb3"></div>
+              <div class="consent-check-label">
+                <strong>I consent to anonymous storage of extracted features for research</strong>
+                <span>Optional — raw audio is never stored or uploaded</span>
+              </div>
+            </div>
+            <div class="consent-check-row" id="cr4" onclick="toggleConsent('cr4','cb4')">
+              <div class="consent-checkbox" id="cb4"></div>
+              <div class="consent-check-label">
+                <strong>I am 18 years of age or older</strong>
+                <span>Or I have guardian consent if under 18</span>
+              </div>
+            </div>
+            <button class="consent-proceed-btn" id="consentProceedBtn" onclick="proceedAfterConsent()" disabled>
+              I Agree — Begin Recording
+            </button>
+            <p style="font-size:9px;color:#8A9AA8;text-align:center;margin-top:8px;line-height:1.5;">
+              NeuroVox · DPSRU Innovation Foundation · Protocol v1.0<br>
+              IRB approval pending — research use only
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- DISORDER INFO MODAL -->
+      <div class="modal-overlay" id="disorderModal">
+        <div class="modal-sheet">
+          <div class="modal-handle"></div>
+          <div class="modal-header">
+            <div class="modal-header-icon" id="diModalIcon" style="background:#E8F7F7;"></div>
+            <div>
+              <div class="modal-title" id="diModalTitle">Disorder</div>
+              <div class="modal-subtitle" id="diModalSub"></div>
+            </div>
+            <button class="modal-close" onclick="closeDisorderModal()">✕</button>
+          </div>
+          <div class="modal-body" id="diModalBody"></div>
+        </div>
+      </div>
+
+
+      <!-- CONSENT MODAL -->
+      <div class="modal-overlay" id="consentModal">
+        <div class="modal-sheet"><div class="modal-handle"></div>
+          <div class="modal-header"><div class="modal-header-icon" style="background:#E8F7F7;">🔒</div>
+            <div><div class="modal-title">Informed Consent</div><div class="modal-subtitle">Please read carefully before proceeding</div></div></div>
+          <div class="modal-body">
+            <div class="consent-section"><div class="consent-section-title">Purpose of Data Collection</div>
+              <p class="consent-text">NeuroVox collects your voice recording and health questionnaire responses for acoustic feature analysis and neurological disorder screening research. This is a prototype research tool developed at DPSRU — <strong>not a certified medical device</strong>.</p></div>
+            <div class="consent-section"><div class="consent-section-title">Your Rights (DPDP Act 2023)</div>
+              <p class="consent-text">Under India's Digital Personal Data Protection Act 2023, you have the right to access, correct, and withdraw your data at any time. Voice audio is processed on-device and never uploaded.</p></div>
+            <div class="consent-legal-box"><p><strong>Legal Notice:</strong> This tool is intended solely for research and educational purposes. It does not constitute medical advice, diagnosis, or treatment. Results must not replace professional clinical evaluation.</p></div>
+            <div class="consent-check-row required" id="cr1" onclick="toggleConsent('cr1','cb1')"><div class="consent-checkbox" id="cb1"></div>
+              <div class="consent-check-label"><strong>I consent to voice recording and acoustic analysis</strong><span>Required to use the screening feature</span></div></div>
+            <div class="consent-check-row required" id="cr2" onclick="toggleConsent('cr2','cb2')"><div class="consent-checkbox" id="cb2"></div>
+              <div class="consent-check-label"><strong>I understand this is a research tool, not a medical diagnosis</strong><span>Results do not replace professional medical advice</span></div></div>
+            <div class="consent-check-row" id="cr3" onclick="toggleConsent('cr3','cb3')"><div class="consent-checkbox" id="cb3"></div>
+              <div class="consent-check-label"><strong>I consent to anonymous storage of extracted features for research</strong><span>Optional — raw audio is never uploaded</span></div></div>
+            <div class="consent-check-row" id="cr4" onclick="toggleConsent('cr4','cb4')"><div class="consent-checkbox" id="cb4"></div>
+              <div class="consent-check-label"><strong>I am 18 years of age or older</strong><span>Or I have guardian consent if under 18</span></div></div>
+            <button class="consent-proceed-btn" id="consentProceedBtn" onclick="proceedAfterConsent()" disabled>I Agree — Begin Recording</button>
+            <p style="font-size:9px;color:#8A9AA8;text-align:center;margin-top:8px;">NeuroVox · DPSRU Innovation Foundation · Protocol v1.0 · IRB approval pending</p>
+          </div></div></div>
+      <!-- DISORDER INFO MODAL -->
+      <div class="modal-overlay" id="disorderModal">
+        <div class="modal-sheet"><div class="modal-handle"></div>
+          <div class="modal-header">
+            <div class="modal-header-icon" id="diModalIcon" style="background:#E8F7F7;"></div>
+            <div><div class="modal-title" id="diModalTitle">Disorder</div><div class="modal-subtitle" id="diModalSub"></div></div>
+            <button class="modal-close" onclick="closeDisorderModal()">✕</button></div>
+          <div class="modal-body" id="diModalBody"></div></div></div>
+      <!-- S1 SPLASH -->
+      <div class="slide s-splash active" id="s1">
+        <div class="splash-logo">
+          <!-- NeuroVox brain-in-circle logo, teal-blue -->
+          <svg viewBox="0 0 80 80" width="72" height="72" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Outer dashed circle -->
+            <circle cx="40" cy="40" r="34" stroke="#14A8A8" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.6"/>
+            <!-- Main circle ring -->
+            <circle cx="40" cy="40" r="28" stroke="#14A8A8" stroke-width="1.8" opacity="0.9"/>
+            <!-- Plus signs -->
+            <line x1="22" y1="10" x2="22" y2="16" stroke="#0D7C7C" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="19" y1="13" x2="25" y2="13" stroke="#0D7C7C" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="55" y1="48" x2="55" y2="54" stroke="#0D7C7C" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="52" y1="51" x2="58" y2="51" stroke="#0D7C7C" stroke-width="1.5" stroke-linecap="round"/>
+            <!-- Brain shape — simplified stylised brain -->
+            <!-- Left hemisphere -->
+            <path d="M40 28 C36 26, 29 26, 27 30 C25 33, 25 36, 27 38 C25 40, 25 44, 28 46 C30 48, 34 48, 36 46 C37 48, 39 49, 40 49" stroke="#14A8A8" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+            <!-- Right hemisphere -->
+            <path d="M40 28 C44 26, 51 26, 53 30 C55 33, 55 36, 53 38 C55 40, 55 44, 52 46 C50 48, 46 48, 44 46 C43 48, 41 49, 40 49" stroke="#14A8A8" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+            <!-- Corpus callosum divider -->
+            <line x1="40" y1="28" x2="40" y2="49" stroke="#14A8A8" stroke-width="1" stroke-dasharray="2 2" opacity="0.7"/>
+            <!-- Brain folds left -->
+            <path d="M29 33 C31 31, 34 32, 33 35" stroke="#0D9B9B" stroke-width="1" stroke-linecap="round" fill="none"/>
+            <path d="M27 40 C29 38, 33 39, 32 42" stroke="#0D9B9B" stroke-width="1" stroke-linecap="round" fill="none"/>
+            <!-- Brain folds right -->
+            <path d="M51 33 C49 31, 46 32, 47 35" stroke="#0D9B9B" stroke-width="1" stroke-linecap="round" fill="none"/>
+            <path d="M53 40 C51 38, 47 39, 48 42" stroke="#0D9B9B" stroke-width="1" stroke-linecap="round" fill="none"/>
+            <!-- Sound wave lines at bottom (voice) -->
+            <path d="M34 53 Q37 56 40 53 Q43 50 46 53" stroke="#14A8A8" stroke-width="1.4" stroke-linecap="round" fill="none" opacity="0.8"/>
+          </svg>
+        </div>
+        <div class="splash-title">NeuroVox</div>
+        <div class="splash-sub" id="s1-sub">The Voice of Your Brain</div>
+        <div class="splash-tagline" id="s1-tagline">AI-powered neurological screening using your voice — free, non-invasive, multilingual.</div>
+        <button class="splash-btn" id="s1-btn" onclick="goTo(2)">Get Started</button>
+        <div class="splash-version">v1.0 Beta · DPSRU Innovation Foundation</div>
+      </div>
+
+      <!-- S2 LANGUAGE -->
+      <div class="slide s-lang" id="s2">
+        <div class="screen-header">
+          <h2 id="s2-title">Choose your language</h2>
+          <p id="s2-sub">NeuroVox works in 12+ Indian languages</p>
+        </div>
+        <div class="screen-body">
+          <div class="lang-grid">
+            <div class="lang-card sel" onclick="selectLangCard(this,'en')">
+              <div class="lang-flag">🇮🇳</div><div class="lang-native">English</div>
+              <div class="lang-english">English</div>
+              <div class="lang-checkmark"><svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></div>
+            </div>
+            <div class="lang-card" onclick="selectLangCard(this,'hi')">
+              <div class="lang-flag">🇮🇳</div><div class="lang-native">हिन्दी</div>
+              <div class="lang-english">Hindi</div>
+              <div class="lang-checkmark"><svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></div>
+            </div>
+            <div class="lang-card" onclick="selectLangCard(this,'ta')">
+              <div class="lang-flag">🇮🇳</div><div class="lang-native">தமிழ்</div>
+              <div class="lang-english">Tamil</div>
+              <div class="lang-checkmark"><svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></div>
+            </div>
+            <div class="lang-card" onclick="selectLangCard(this,'bn')">
+              <div class="lang-flag">🇮🇳</div><div class="lang-native">বাংলা</div>
+              <div class="lang-english">Bengali</div>
+              <div class="lang-checkmark"><svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></div>
+            </div>
+            <div class="lang-card" onclick="selectLangCard(this,'te')">
+              <div class="lang-flag">🇮🇳</div><div class="lang-native">తెలుగు</div>
+              <div class="lang-english">Telugu</div>
+              <div class="lang-checkmark"><svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></div>
+            </div>
+            <div class="lang-card" onclick="selectLangCard(this,'mr')">
+              <div class="lang-flag">🇮🇳</div><div class="lang-native">मराठी</div>
+              <div class="lang-english">Marathi</div>
+              <div class="lang-checkmark"><svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></div>
+            </div>
+          </div>
+        </div>
+        <button class="bottom-btn" id="s2-btn" onclick="goTo(3)">Continue →</button>
+      </div>
+
+      <!-- S3 HOME -->
+      <div class="slide s-home" id="s3">
+        <div class="home-header">
+          <div class="home-greeting" id="s3-greet">Good morning,</div>
+          <div class="home-name" id="s3-name">Welcome back</div>
+          <div class="home-streak"><div class="streak-dot"></div><span id="s3-streak">Last scan: 3 days ago · Low risk</span></div>
+        </div>
+        <div class="screen-body">
+          <div class="section-title" id="s3-scan-lbl">QUICK SCAN</div>
+          <div class="quick-scan-card" onclick="goTo(4)">
+            <div class="qsc-title" id="s3-qsc-title">Start Voice Scan</div>
+            <div class="qsc-sub" id="s3-qsc-sub">Takes 60 seconds · 5 disorders screened</div>
+            <div class="qsc-btn" id="s3-qsc-btn">Tap to begin →</div>
+            <div class="qsc-icon">🎙</div>
+          </div>
+          <div class="section-title" id="s3-dis-lbl">DISORDERS SCREENED</div>
+          <div class="disorders-grid">
+            <div class="disorder-chip" onclick="openDisorderModal('pd')" style="cursor:pointer;">
+              <div class="dc-icon">🧠</div><div class="dc-name" id="dis1">Parkinson's</div>
+              <div class="dc-desc">Voice tremor</div>
+              <div style="font-size:9px;color:#14A8A8;margin-top:3px;">Tap to learn more ›</div>
+            </div>
+            <div class="disorder-chip" onclick="openDisorderModal('alz')" style="cursor:pointer;">
+              <div class="dc-icon">💭</div><div class="dc-name" id="dis2">Alzheimer's</div>
+              <div class="dc-desc">Word finding</div>
+              <div style="font-size:9px;color:#14A8A8;margin-top:3px;">Tap to learn more ›</div>
+            </div>
+            <div class="disorder-chip" onclick="openDisorderModal('stroke')" style="cursor:pointer;">
+              <div class="dc-icon">⚡</div><div class="dc-name" id="dis3">Stroke</div>
+              <div class="dc-desc">Articulation</div>
+              <div style="font-size:9px;color:#14A8A8;margin-top:3px;">Tap to learn more ›</div>
+            </div>
+            <div class="disorder-chip" onclick="openDisorderModal('als')" style="cursor:pointer;">
+              <div class="dc-icon">🔬</div><div class="dc-name" id="dis4">ALS & MS</div>
+              <div class="dc-desc">Voice fatigue</div>
+              <div style="font-size:9px;color:#14A8A8;margin-top:3px;">Tap to learn more ›</div>
+            </div>
+          </div>
+          <div class="section-title" id="s3-last-lbl">LAST RESULT</div>
+          <div class="last-scan-card">
+            <div class="lsc-dot"></div>
+            <div><div class="lsc-label" id="s3-lsc-lbl">Parkinson's risk</div><div class="lsc-val">Scan completed</div></div>
+            <div class="lsc-badge" id="s3-lsc-badge">Low Risk</div>
+          </div>
+        </div>
+        <div class="navbar">
+          <div class="nav-item active"><div class="nav-icon">🏠</div><div class="nav-label" id="nb1">Home</div></div>
+          <div class="nav-item" onclick="goTo(4)"><div class="nav-icon">🎙</div><div class="nav-label" id="nb2">Scan</div></div>
+          <div class="nav-item" onclick="goTo(6)"><div class="nav-icon">📊</div><div class="nav-label" id="nb3">Results</div></div>
+          <div class="nav-item"><div class="nav-icon">👤</div><div class="nav-label" id="nb4">Profile</div></div>
+        </div>
+      </div>
+
+      <!-- S4 SCAN -->
+      <div class="slide s-scan" id="s4">
+        <div class="scan-header">
+          <button class="back-btn" onclick="goTo(3)">←</button>
+          <h2 id="s4-title">Voice Scan</h2>
+          <svg viewBox="0 0 32 32" width="28" height="28" fill="none" style="margin-left:auto;opacity:0.7">
+            <circle cx="16" cy="16" r="13" stroke="#14A8A8" stroke-width="1" stroke-dasharray="2 2"/>
+            <circle cx="16" cy="16" r="10" stroke="#14A8A8" stroke-width="1.2"/>
+            <path d="M16 10 C14 9, 10.5 9, 9.5 11 C8.5 12.5, 8.5 14, 9.5 15 C8.5 16, 8.5 18, 10.5 19.5 C11.5 20.5, 13.5 20.5, 15 19.5 C15.5 20.5, 15.8 21, 16 21" stroke="#14A8A8" stroke-width="1" stroke-linecap="round" fill="none"/>
+            <path d="M16 10 C18 9, 21.5 9, 22.5 11 C23.5 12.5, 23.5 14, 22.5 15 C23.5 16, 23.5 18, 21.5 19.5 C20.5 20.5, 18.5 20.5, 17 19.5 C16.5 20.5, 16.2 21, 16 21" stroke="#14A8A8" stroke-width="1" stroke-linecap="round" fill="none"/>
+            <path d="M13 23 Q14.5 24.5 16 23 Q17.5 21.5 19 23" stroke="#14A8A8" stroke-width="1" stroke-linecap="round" fill="none" opacity="0.8"/>
+          </svg>
+        </div>
+        <div class="task-progress">
+          <div class="task-dot done"></div>
+          <div class="task-dot active"></div>
+          <div class="task-dot"></div>
+        </div>
+        <div class="task-card">
+          <div class="task-num" id="s4-task-num">TASK 2 OF 3</div>
+          <div class="task-title" id="s4-task-title">Sustained Vowel</div>
+          <div class="task-instruction" id="s4-task-inst">Take a deep breath and say "aaah" in a steady voice for as long as comfortable.</div>
+          <div class="task-example" id="s4-task-ex">"Aaaaaah..." (hold for 5–8 seconds)</div>
+        </div>
+
+        <!-- Mic button -->
+        <div class="mic-area">
+          <div class="mic-ring" id="micRing" onclick="toggleRecord()">
+            <button class="mic-btn" id="micBtn">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <rect x="9" y="2" width="6" height="12" rx="3" fill="white"/>
+                <path d="M5 10a7 7 0 0014 0" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                <line x1="12" y1="21" x2="12" y2="17" stroke="white" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <div class="mic-status" id="micStatus">Tap to record</div>
+          <div class="mic-timer" id="micTimer" style="display:none">0.0s</div>
+        </div>
+
+        <div id="micErrorMsg" class="mic-error" style="display:none">Microphone access denied. Please allow mic permissions and reload.</div>
+
+        <!-- Tip (always visible) -->
+        <div style="padding:0 16px 8px;">
+          <div style="background:#E8F7F7;border-radius:10px;padding:10px 12px;font-size:11px;color:#0D7C7C;line-height:1.5;" id="s4-tip">
+            💡 Tap the mic to start. Find a quiet place, hold phone 20–30cm away.
+          </div>
+        </div>
+
+        <!-- NEXT button — always in flow, never pushed off screen -->
+        <div style="padding:0 16px 10px;">
+          <button class="bottom-btn teal" id="s4-next" onclick="finishScanAndGo()" style="width:100%;margin:0;">Next Task →</button>
+        </div>
+
+        <!-- Live spectrogram — shown after recording starts -->
+        <div style="padding:0 16px 6px;display:none;" id="specSection">
+          <div style="font-size:9px;color:#5A7A8A;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;">Live Spectrogram</div>
+          <canvas id="specCanvas" height="52" style="width:100%;border-radius:8px;display:block;background:#0A1A28;"></canvas>
+        </div>
+
+        <!-- Signal quality -->
+        <div class="quality-row" id="qualityRow" style="display:none;margin:0 16px 6px;">
+          <div class="quality-dot" id="qualDot"></div>
+          <div class="quality-label" id="qualLabel">Waiting for signal…</div>
+          <div class="quality-val snr-display" id="qualVal"></div>
+        </div>
+
+        <!-- Live feature cards — 8 metrics in 2-col grid -->
+        <div style="padding:0 16px;display:none;" id="liveFeatures">
+          <div style="font-size:9px;color:#5A7A8A;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;" id="lbl-live-metrics">Live Voice Metrics</div>
+          <div class="feature-grid">
+            <div class="feat-card">
+              <div class="feat-label" id="lbl-pitch">Pitch (F0)</div>
+              <div><span class="feat-val" id="fPitch">—</span> <span class="feat-unit">Hz</span></div>
+              <div class="feat-bar-wrap"><div class="feat-bar-fill" id="fPitchBar" style="width:0%;background:#0D7C7C"></div></div>
+            </div>
+            <div class="feat-card">
+              <div class="feat-label" id="lbl-rms" id="vsc-rms">Loudness (RMS)</div>
+              <div><span class="feat-val" id="fRms">—</span> <span class="feat-unit">dB</span></div>
+              <div class="feat-bar-wrap"><div class="feat-bar-fill" id="fRmsBar" style="width:0%;background:#14A8A8"></div></div>
+            </div>
+            <div class="feat-card">
+              <div class="feat-label" id="lbl-sc" id="vsc-sc">Spectral Centroid</div>
+              <div><span class="feat-val" id="fSC">—</span> <span class="feat-unit">Hz</span></div>
+              <div class="feat-bar-wrap"><div class="feat-bar-fill" id="fSCBar" style="width:0%;background:#5A8AC9"></div></div>
+            </div>
+            <div class="feat-card">
+              <div class="feat-label" id="lbl-zcr">ZCR · Irregularity</div>
+              <div><span class="feat-val" id="fZCR">—</span> <span class="feat-unit">rate</span></div>
+              <div class="feat-bar-wrap"><div class="feat-bar-fill" id="fZCRBar" style="width:0%;background:#FF6B35"></div></div>
+            </div>
+            <div class="feat-card">
+              <div class="feat-label" id="lbl-flux" id="vsc-flux">Spectral Flux</div>
+              <div><span class="feat-val" id="fFlux">—</span> <span class="feat-unit"></span></div>
+              <div class="feat-bar-wrap"><div class="feat-bar-fill" id="fFluxBar" style="width:0%;background:#7B5EA7"></div></div>
+            </div>
+            <div class="feat-card">
+              <div class="feat-label" id="lbl-rolloff">Spectral Rolloff</div>
+              <div><span class="feat-val" id="fRoll">—</span> <span class="feat-unit">Hz</span></div>
+              <div class="feat-bar-wrap"><div class="feat-bar-fill" id="fRollBar" style="width:0%;background:#C9823A"></div></div>
+            </div>
+            <div class="feat-card">
+              <div class="feat-label" id="lbl-voiced">Voiced Frames</div>
+              <div><span class="feat-val" id="fVoiced">0</span> <span class="feat-unit" id="lbl-frames-unit">frames</span></div>
+              <div class="feat-bar-wrap"><div class="feat-bar-fill" id="fVoicedBar" style="width:0%;background:#2A8A5A"></div></div>
+            </div>
+            <div class="feat-card">
+              <div class="feat-label" id="lbl-stab" id="vsc-stab">Pitch Stability</div>
+              <div><span class="feat-val" id="fStab">—</span> <span class="feat-unit">%</span></div>
+              <div class="feat-bar-wrap"><div class="feat-bar-fill" id="fStabBar" style="width:0%;background:#0D7C7C"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Spacer so last card isn't flush against bottom -->
+        <div style="height:16px;flex-shrink:0;"></div>
+      </div>
+
+      <!-- S5 QUESTIONNAIRE -->
+      <div class="slide s-quest" id="s5">
+        <div class="scan-header">
+          <button class="back-btn" onclick="goTo(4)">←</button>
+          <h2 id="s5-title">Health Questionnaire</h2>
+        </div>
+        <div class="quest-body" id="questBody">
+          <!-- Rebuilt dynamically by rebuildQuestionnaire() on language change -->
+        </div>
+        </div>
+        <button class="bottom-btn teal" onclick="goTo(6)" style="margin:8px 16px 16px;" id="s5-btn">Analyse My Voice →</button>
+      </div>
+
+      <!-- S6 RESULT -->
+      <div class="slide s-result" id="s6">
+        <div class="result-header">
+          <div class="result-badge" id="s6-badge">Analysis Complete</div>
+          <div class="result-name" id="s6-name">Your Screening Report</div>
+          <div class="result-sub" id="s6-sub">Based on voice analysis + symptom questionnaire</div>
+        </div>
+        <div class="screen-body" style="overflow-y:auto;">
+          <div style="padding:12px 16px 0;font-size:12px;color:#5A7A8A;font-weight:500;text-transform:uppercase;letter-spacing:0.7px;" id="s6-risk-lbl">RISK LEVELS</div>
+
+          <!-- Real voice data summary -->
+          <div class="voice-summary-card" id="voiceSummaryCard" style="display:none">
+            <div class="vsc-title" id="vs-title">Your Voice Analysis</div>
+            <div class="vsc-row"><span class="vsc-key" id="vsc-pitch">Avg Pitch (F0)</span><span class="vsc-val" id="vs-pitch">—</span></div>
+            <div class="vsc-row"><span class="vsc-key">Loudness (RMS)</span><span class="vsc-val" id="vs-rms">—</span></div>
+            <div class="vsc-row"><span class="vsc-key">Spectral Centroid</span><span class="vsc-val" id="vs-sc">—</span></div>
+            <div class="vsc-row"><span class="vsc-key">ZCR (irregularity)</span><span class="vsc-val" id="vs-zcr">—</span></div>
+            <div class="vsc-row"><span class="vsc-key">Recording duration</span><span class="vsc-val" id="vs-dur">—</span></div>
+            <div class="vsc-row"><span class="vsc-key" id="vsc-qual-lbl">Signal quality</span><span class="vsc-val" id="vs-qual">—</span></div>
+            <div style="margin-top:6px;font-size:9px;color:#5A7A8A;line-height:1.5;" id="vs-note">These are raw acoustic measurements. Risk scores below are rule-based estimates — not ML predictions. Clinical models require validated training data.</div>
+          </div>
+          <div class="disorder-results">
+            <div class="dr-row"><div class="dr-name">Parkinson's</div><div class="dr-bar-wrap"><div class="dr-bar dr-med" style="width:38%"></div></div><div class="dr-pct pct-med">38%</div></div>
+            <div class="dr-row"><div class="dr-name">Alzheimer's</div><div class="dr-bar-wrap"><div class="dr-bar dr-low" style="width:12%"></div></div><div class="dr-pct pct-low">12%</div></div>
+            <div class="dr-row"><div class="dr-name">Stroke</div><div class="dr-bar-wrap"><div class="dr-bar dr-low" style="width:8%"></div></div><div class="dr-pct pct-low">8%</div></div>
+            <div class="dr-row"><div class="dr-name">ALS</div><div class="dr-bar-wrap"><div class="dr-bar dr-low" style="width:6%"></div></div><div class="dr-pct pct-low">6%</div></div>
+            <div class="dr-row"><div class="dr-name">MS</div><div class="dr-bar-wrap"><div class="dr-bar dr-low" style="width:5%"></div></div><div class="dr-pct pct-low">5%</div></div>
+          </div>
+          <div style="margin:10px 16px 0;background:#FFF4F0;border:1.5px solid #FFCBB8;border-radius:12px;padding:12px;">
+            <div style="font-size:12px;font-weight:600;color:#CC4400;" id="s6-alert-title">Moderate Risk Detected</div>
+            <div style="font-size:11px;color:#885533;margin-top:4px;line-height:1.5;" id="s6-alert-body">Voice patterns suggest some indicators associated with early Parkinson's. We recommend consulting a neurologist.</div>
+          </div>
+          <div class="referral-card" onclick="goTo(3)">
+            <div class="ref-title" id="s6-ref-title">Book Neurologist Consultation</div>
+            <div class="ref-desc" id="s6-ref-desc">Nearest specialist: 2.4 km away · Available tomorrow</div>
+            <div class="ref-cta" id="s6-ref-cta">Book Appointment →</div>
+          </div>
+          <div id="questSummarySection" style="display:none;">
+            <div style="padding:10px 16px 4px;font-size:10px;font-weight:600;color:#5A7A8A;text-transform:uppercase;letter-spacing:0.7px;" id="s6-qs-lbl">Your Responses</div>
+            <div id="questSummaryBody" style="padding:0 16px;display:flex;flex-direction:column;gap:4px;"></div>
+          </div>
+          <div style="padding:10px 16px 4px;">
+            <button onclick="downloadDataPackage()" style="width:100%;padding:12px;background:linear-gradient(135deg,#0A2342,#0D5A7C);color:#fff;border:none;border-radius:13px;font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="s6-download-btn">Download Data Package (.zip)</span></button>
+            <p style="font-size:9px;color:#8A9AA8;text-align:center;margin-top:5px;line-height:1.5;" id="s6-download-note">Includes: audio recording + acoustic features (JSON) + questionnaire (CSV)</p>
+          </div>
+          <div class="disclaimer" id="s6-disc">This is a screening tool, not a medical diagnosis. Always consult a qualified doctor for medical advice.</div>
+        </div>
+      </div>
+
+    </div><!-- /screen -->
+  </div><!-- /phone-frame -->
+
+  <div class="screen-nav" id="screenNav">
+    <button class="snav-btn cur" onclick="goTo(1)">1 · Splash</button>
+    <button class="snav-btn" onclick="goTo(2)">2 · Language</button>
+    <button class="snav-btn" onclick="goTo(3)">3 · Home</button>
+    <button class="snav-btn" onclick="goTo(4)">4 · Scan</button>
+    <button class="snav-btn" onclick="goTo(5)">5 · Questions</button>
+    <button class="snav-btn" onclick="goTo(6)">6 · Results</button>
+  </div>
+
+  <div class="footer-note">NeuroVox · DPSRU Innovation &amp; Incubation Foundation · Prototype v1.0</div>
+
+</div><!-- /page -->
+  <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Toggle fullscreen" id="fsBtn">
+    <svg id="fsIcon" viewBox="0 0 20 20" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round">
+      <path d="M3 8V3h5M17 8V3h-5M3 12v5h5M17 12v5h-5"/>
+    </svg>
+  </button>
+
+<script>
+
+/* ─── AUDIO ENGINE ─────────────────────────────────────── */
+let audioCtx=null,analyser=null,animFrame=null,mediaStream=null;
+let mediaRecorder=null,audioChunks=[];
+let recording=false,recInterval=null,recSeconds=0;
+const buf={pitch:[],rms:[],sc:[],zcr:[],flux:[],rolloff:[],voicedCount:0,totalFrames:0};
+let prevFreqData=null,specCtx=null,specCanvas=null,specX=0;
+
+function initSpecCanvas(){specCanvas=document.getElementById('specCanvas');if(specCanvas){specCtx=specCanvas.getContext('2d');specX=0;}}
+function drawSpectrogram(fd,n){if(!specCtx||!specCanvas)return;const W=specCanvas.width=specCanvas.offsetWidth||280,H=48;if(specX>=W){specCtx.drawImage(specCanvas,-1,0);specX=W-1;}const sh=H/n;for(let i=0;i<n;i++){const v=fd[i]/255;specCtx.fillStyle=`rgb(${Math.round(v*20)},${Math.round(v*140)},${Math.round(v*140)})`;specCtx.fillRect(specX,H-(i+1)*sh,1,sh+1);}specX++;}
+function estimatePitch(td,sr){const n=td.length,half=Math.floor(n/2);let bestR=-1,bestLag=-1,r0=0;for(let i=0;i<n;i++)r0+=td[i]*td[i];if(r0<0.001)return 0;for(let lag=Math.floor(sr/700);lag<Math.floor(sr/60);lag++){let r=0;for(let i=0;i<half;i++)r+=td[i]*td[i+lag];r/=(r0*0.5+1e-9);if(r>bestR){bestR=r;bestLag=lag;}}return(bestR<0.4||bestLag<1)?0:sr/bestLag;}
+function spectralCentroid(fd,sr){let w=0,t=0;const bHz=sr/(fd.length*2);for(let i=0;i<fd.length;i++){w+=fd[i]*i*bHz;t+=fd[i];}return t>0?w/t:0;}
+function zeroCrossingRate(td){let z=0;for(let i=1;i<td.length;i++)if((td[i]>=0)!==(td[i-1]>=0))z++;return z/td.length;}
+function computeRMS(td){let s=0;for(let i=0;i<td.length;i++)s+=td[i]*td[i];return Math.sqrt(s/td.length);}
+function spectralFlux(curr,prev){if(!prev)return 0;let s=0;for(let i=0;i<curr.length;i++){const d=(curr[i]-prev[i])/255;s+=d*d;}return Math.sqrt(s/curr.length);}
+function spectralRolloff(fd,sr){let tot=0;for(let i=0;i<fd.length;i++)tot+=fd[i];let cum=0;const bHz=sr/(fd.length*2);for(let i=0;i<fd.length;i++){cum+=fd[i];if(cum>=tot*0.85)return i*bHz;}return sr/2;}
+function avg(a){return a.length?a.reduce((s,v)=>s+v,0)/a.length:0;}
+function stdDev(a){if(a.length<2)return 0;const m=avg(a);return Math.sqrt(a.map(x=>(x-m)**2).reduce((s,v)=>s+v,0)/a.length);}
+
+function analysisLoop(){
+  if(!recording||!analyser)return;
+  const td=new Float32Array(analyser.fftSize),fd=new Uint8Array(analyser.frequencyBinCount);
+  analyser.getFloatTimeDomainData(td);analyser.getByteFrequencyData(fd);
+  const rms=computeRMS(td),zcr=zeroCrossingRate(td),sc=spectralCentroid(fd,audioCtx.sampleRate);
+  const f0=estimatePitch(td,audioCtx.sampleRate),flux=spectralFlux(fd,prevFreqData),roll=spectralRolloff(fd,audioCtx.sampleRate);
+  buf.totalFrames++;prevFreqData=fd.slice(0);
+  if(rms>0.005){buf.voicedCount++;if(f0>60&&f0<600)buf.pitch.push(f0);buf.rms.push(20*Math.log10(rms+1e-9));buf.sc.push(sc);buf.zcr.push(zcr);buf.flux.push(flux);buf.rolloff.push(roll);updateLiveUI(f0,rms,sc,zcr,flux,roll);}
+  drawSpectrogram(fd,64);
+  animFrame=requestAnimationFrame(analysisLoop);
+}
+
+function updateLiveUI(f0,rms,sc,zcr,flux,roll){
+  const rmsDb=20*Math.log10(rms+1e-9);
+  const stab=buf.pitch.length>2?Math.max(0,Math.min(100,Math.round(100-(stdDev(buf.pitch)/avg(buf.pitch))*100))):0;
+  const s=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  const b=(id,w)=>{const e=document.getElementById(id);if(e)e.style.width=w+'%';};
+  s('fPitch',f0>60?Math.round(f0):'—');s('fRms',Math.round(rmsDb));s('fSC',Math.round(sc));
+  s('fZCR',zcr.toFixed(3));s('fFlux',flux.toFixed(3));s('fRoll',Math.round(roll));
+  s('fVoiced',buf.voicedCount);s('fStab',buf.pitch.length>2?stab:'—');
+  b('fPitchBar',f0>0?Math.min(100,f0/400*100):0);b('fRmsBar',Math.min(100,Math.max(0,(rmsDb+60)/60*100)));
+  b('fSCBar',Math.min(100,sc/4000*100));b('fZCRBar',Math.min(100,zcr/0.3*100));
+  b('fFluxBar',Math.min(100,flux/0.15*100));b('fRollBar',Math.min(100,roll/8000*100));
+  b('fVoicedBar',Math.min(100,buf.voicedCount/200*100));b('fStabBar',stab);
+  const QL=LANGS[currentLang]||LANGS.en;
+  const dot=document.getElementById('qualDot'),lbl=document.getElementById('qualLabel'),val=document.getElementById('qualVal');
+  if(rms>0.05){if(dot)dot.className='quality-dot good';if(lbl)lbl.textContent=QL.qual_good||'Good signal';}
+  else if(rms>0.01){if(dot)dot.className='quality-dot warn';if(lbl)lbl.textContent=QL.qual_weak||'Weak — speak louder';}
+  else{if(dot)dot.className='quality-dot bad';if(lbl)lbl.textContent=QL.qual_bad||'Too quiet';}
+  if(val)val.textContent=Math.round(rmsDb)+' dB';
+}
+
+async function startAudioCapture(stream){
+  audioChunks=[];
+  try{mediaRecorder=new MediaRecorder(stream,{mimeType:'audio/webm;codecs=opus'});}
+  catch(e){try{mediaRecorder=new MediaRecorder(stream);}catch(e2){mediaRecorder=null;return;}}
+  mediaRecorder.ondataavailable=e=>{if(e.data&&e.data.size>0)audioChunks.push(e.data);};
+  mediaRecorder.start(100);
+}
+function stopAudioCapture(){return new Promise(resolve=>{if(!mediaRecorder||mediaRecorder.state==='inactive'){resolve(null);return;}mediaRecorder.onstop=()=>resolve(new Blob(audioChunks,{type:mediaRecorder.mimeType||'audio/webm'}));mediaRecorder.stop();});}
+
+async function startRecord(){
+  if(recording)return;
+  const errEl=document.getElementById('micErrorMsg');
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    if(errEl){errEl.innerHTML='Microphone not available. This app requires <strong>HTTPS or localhost</strong> to access the mic.<br><small>On your phone: open via a local server or host the file on HTTPS. On Chrome desktop: <em>chrome://flags → Insecure origins treated as secure</em>.</small>';errEl.style.display='block';}
+    return;
+  }
+  try{mediaStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false},video:false});}
+  catch(e){
+    let msg='Mic error: '+(e.message||'Permission denied.');
+    if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError'){msg='Microphone permission denied. Please allow microphone access in your browser settings, then reload the page.';}
+    else if(e.name==='NotFoundError'){msg='No microphone found on this device.';}
+    else if(location.protocol==='file:'){msg='⚠ Mic blocked: this file is open as file://. Please serve it via a local server (python3 -m http.server) or HTTPS for microphone to work on phones.';}
+    if(errEl){errEl.innerHTML=msg;errEl.style.display='block';}
+    return;
+  }
+  if(errEl)errEl.style.display='none';
+  try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')await audioCtx.resume();}
+  catch(e){if(errEl){errEl.textContent='AudioContext error: '+e.message;errEl.style.display='block';}mediaStream.getTracks().forEach(t=>t.stop());return;}
+  const src=audioCtx.createMediaStreamSource(mediaStream);
+  analyser=audioCtx.createAnalyser();analyser.fftSize=2048;analyser.smoothingTimeConstant=0.3;src.connect(analyser);
+  startAudioCapture(mediaStream);
+  recording=true;recSeconds=0;prevFreqData=null;
+  buf.pitch=[];buf.rms=[];buf.sc=[];buf.zcr=[];buf.flux=[];buf.rolloff=[];buf.voicedCount=0;buf.totalFrames=0;
+  document.getElementById('micRing').classList.add('recording');
+  document.getElementById('micStatus').style.display='none';
+  document.getElementById('micTimer').style.display='block';
+  const sp=document.getElementById('specSection');if(sp)sp.style.display='block';
+  const lf=document.getElementById('liveFeatures');if(lf)lf.style.display='block';
+  const qr=document.getElementById('qualityRow');if(qr)qr.style.display='flex';
+  initSpecCanvas();
+  recInterval=setInterval(()=>{recSeconds+=0.1;document.getElementById('micTimer').textContent=recSeconds.toFixed(1)+'s';if(recSeconds>=60)stopRecord();},100);
+  analysisLoop();
+}
+async function stopRecord(){
+  if(!recording)return;recording=false;clearInterval(recInterval);if(animFrame)cancelAnimationFrame(animFrame);
+  window._nv_audioBlob=await stopAudioCapture();
+  if(mediaStream)mediaStream.getTracks().forEach(t=>t.stop());
+  if(audioCtx){try{audioCtx.close();}catch(e){}audioCtx=null;}
+  document.getElementById('micRing').classList.remove('recording');
+  const frames=buf.rms.length;
+  document.getElementById('micStatus').textContent=frames>0?`✓ Recorded ${recSeconds.toFixed(1)}s — ${frames} voiced frames`:`⚠ Recorded ${recSeconds.toFixed(1)}s — no voice detected`;
+  document.getElementById('micStatus').style.display='block';
+  document.getElementById('micTimer').style.display='none';
+}
+function computeRiskScores(){
+  const mP=avg(buf.pitch),pStd=stdDev(buf.pitch),mR=avg(buf.rms),mSC=avg(buf.sc),mZCR=avg(buf.zcr),mFx=avg(buf.flux),mRoll=avg(buf.rolloff);
+  const stab=mP>0?Math.max(0,100-(pStd/mP)*100):0,vr=buf.totalFrames>0?buf.voicedCount/buf.totalFrames:0;
+  let pd=10;if(mP>0&&mP<130)pd+=15;if(pStd>12)pd+=18;if(mR<-35)pd+=15;if(stab<60&&mP>0)pd+=10;if(mZCR>0.18)pd+=8;pd=Math.min(pd,85);
+  let alz=8;if(vr<0.35&&recSeconds>5)alz+=22;if(mSC<900)alz+=8;if(mRoll<2000)alz+=8;alz=Math.min(alz,75);
+  let stroke=5;if(mZCR>0.2&&mSC<1000)stroke+=18;if(mFx>0.08)stroke+=10;stroke=Math.min(stroke,70);
+  let als=4;if(mZCR>0.22&&mR<-28)als+=15;if(mFx>0.09)als+=10;als=Math.min(als,65);
+  let ms=3;if(mZCR>0.19&&mFx>0.07)ms+=14;ms=Math.min(ms,60);
+  return{pd,alz,stroke,als,ms,meanPitch:mP,pitchStdV:pStd,meanRms:mR,meanSC:mSC,meanZCR:mZCR,meanFlux:mFx,meanRoll:mRoll,stability:stab,voiceRatio:vr};
+}
+function finishScanAndGo(){stopRecord();window._nv_scores=computeRiskScores();window._nv_dur=recSeconds;window._nv_qual=buf.rms.length>10?'Good':buf.rms.length>3?'Fair':'Poor';goTo(5);}
+
+function populateResults(){
+  const S=window._nv_scores;if(!S)return;
+  const dur=window._nv_dur||0,qual=window._nv_qual||'—';
+  const vsc=document.getElementById('voiceSummaryCard');if(vsc)vsc.style.display='block';
+  const sv=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  sv('vs-pitch',S.meanPitch>0?Math.round(S.meanPitch)+' Hz':'No voice');
+  sv('vs-rms',Math.round(S.meanRms)+' dB');sv('vs-sc',Math.round(S.meanSC)+' Hz');
+  sv('vs-zcr',S.meanZCR.toFixed(3));sv('vs-flux',S.meanFlux.toFixed(3));
+  sv('vs-stab',S.meanPitch>0?Math.round(S.stability)+'%':'—');
+  sv('vs-dur',dur.toFixed(1)+'s');sv('vs-qual',qual);
+  const rows=document.querySelectorAll('.dr-row'),vals=[S.pd,S.alz,S.stroke,S.als,S.ms];
+  rows.forEach((row,i)=>{const pct=vals[i]||0,bar=row.querySelector('.dr-bar'),pe=row.querySelector('.dr-pct');if(bar){bar.style.width=pct+'%';bar.className='dr-bar '+(pct>30?'dr-med':'dr-low');}if(pe){pe.textContent=pct+'%';pe.className='dr-pct '+(pct>30?'pct-med':'pct-low');}});
+  const RL=LANGS[currentLang]||LANGS.en;
+  const names=RL.dis_names||["Parkinson's","Alzheimer's","Stroke","ALS","MS"];
+  const maxPct=Math.max(...vals),maxName=names[vals.indexOf(maxPct)];
+  const aT=document.getElementById('s6-alert-title'),aB=document.getElementById('s6-alert-body');
+  if(aT&&aB){
+    if(maxPct>35){aT.textContent=RL.risk_elevated||'Elevated Signal Detected';aB.textContent=`${maxName} — ${maxPct}%. ${RL.s6alertbody||'Heuristic estimate only — consult a neurologist.'}`;aT.style.color='#CC4400';}
+    else if(dur<2){aT.textContent=RL.risk_short||'Recording Too Short';aB.textContent=RL.risk_short_body||'Please record at least 5 seconds.';aT.style.color='#CC4400';}
+    else{aT.textContent=RL.risk_low||'Low Risk Pattern';aB.textContent=`${names[0]} ${S.pd}%, ${names[1]} ${S.alz}%, ${names[2]} ${S.stroke}%, ${names[3]} ${S.als}%, ${names[4]} ${S.ms}%.`;aT.style.color='#0D7C7C';}
+  }
+  showQuestSummary(collectAnswers());
+}
+
+/* ─── CONSENT ────────────────────────────────────────────── */
+window._consentGiven=false;
+function openConsentModal(){document.getElementById('consentModal').classList.add('open');updateConsentBtn();}
+function closeConsentModal(){document.getElementById('consentModal').classList.remove('open');}
+function toggleConsent(rId,cId){
+  const r=document.getElementById(rId);r.classList.toggle('checked');
+  const c=document.getElementById(cId);c.innerHTML=r.classList.contains('checked')?'<svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>':'';
+  updateConsentBtn();
+}
+function updateConsentBtn(){document.getElementById('consentProceedBtn').disabled=!(document.getElementById('cr1').classList.contains('checked')&&document.getElementById('cr2').classList.contains('checked'));}
+function proceedAfterConsent(){window._consentGiven=true;closeConsentModal();startRecord();}
+function toggleRecord(){if(recording){stopRecord();return;}if(!window._consentGiven){openConsentModal();}else{startRecord();}}
+
+/* ─── DISORDER MODAL ─────────────────────────────────────── */
+const DISORDER_DATA={
+  pd:{icon:'🧠',color:'#E8F7F7',title:"Parkinson's Disease",sub:"Progressive neurodegenerative disorder",badge:{text:"771K patients in India",bg:"#E8F7F7",color:"#0D7C7C"},
+    overview:"Parkinson's Disease is a progressive disorder affecting dopamine-producing neurons in the substantia nigra. India has an estimated 771,000 patients, with most in rural areas.",
+    symptoms:[{dot:"#0D7C7C",text:"Resting tremor — pill-rolling hand tremor, typically one-sided at onset"},{dot:"#0D7C7C",text:"Bradykinesia — slowness of movement, reduced arm swing while walking"},{dot:"#0D7C7C",text:"Rigidity — muscle stiffness, cogwheel resistance on passive movement"},{dot:"#5A8AC9",text:"Hypophonia — soft, monotone voice; reduced pitch range"},{dot:"#5A8AC9",text:"Micrographia — progressively smaller handwriting"},{dot:"#5A8AC9",text:"Depression, sleep disturbances, loss of smell (early non-motor signs)"}],
+    voice:"NeuroVox screens for: <strong>vocal tremor</strong> (pitch instability), <strong>hypophonia</strong> (reduced RMS), and elevated <strong>jitter/shimmer</strong> — validated biomarkers from the PC-GITA dataset.",
+    stat:"📊 Literature: 82–91% accuracy (SVM on sustained vowel, PC-GITA, Orozco-Arroyave 2014)"},
+  alz:{icon:'💭',color:'#F0EEFF',title:"Alzheimer's & Dementia",sub:"Progressive cognitive decline disorder",badge:{text:"8.8M affected in India",bg:"#F0EEFF",color:"#534AB7"},
+    overview:"Alzheimer's is the most common form of dementia, causing progressive memory loss. Voice changes reflect deteriorating language processing in the brain.",
+    symptoms:[{dot:"#534AB7",text:"Memory loss — forgetting recent events, repeating questions"},{dot:"#534AB7",text:"Word-finding difficulty — long pauses, use of vague words like 'thing'"},{dot:"#534AB7",text:"Disorientation — confusion about time, place, or familiar faces"},{dot:"#5A8AC9",text:"Reduced vocabulary in spontaneous speech"},{dot:"#5A8AC9",text:"Slower speech rate with more frequent filled pauses ('uh', 'um')"}],
+    voice:"NeuroVox screens for: <strong>pause patterns</strong> (voice/silence ratio) and <strong>reduced spectral complexity</strong>. Based on DementiaBank ADReSS methodology.",
+    stat:"📊 Literature: 79–86% accuracy (LSTM + DNN, DementiaBank ADReSS 2020)"},
+  stroke:{icon:'⚡',color:'#FFF0E8',title:"Stroke & Dysarthria",sub:"Cerebrovascular event with speech impact",badge:{text:"#3 cause of death in India",bg:"#FFF0E8",color:"#CC4400"},
+    overview:"Stroke occurs when blood supply to the brain is interrupted. It is the 3rd leading cause of death in India. Dysarthria affects up to 42% of stroke survivors.",
+    symptoms:[{dot:"#CC4400",text:"FAST: Face drooping, Arm weakness, Speech difficulty, Time to call emergency"},{dot:"#CC4400",text:"Sudden severe headache, confusion, or vision problems"},{dot:"#5A8AC9",text:"Dysarthria — slurred, imprecise consonants, reduced speech rate"},{dot:"#5A8AC9",text:"Aphasia — difficulty producing or understanding language"}],
+    voice:"NeuroVox screens for: <strong>imprecise articulation</strong> (high ZCR + spectral flux) and <strong>abnormal spectral centroid</strong> — from the TORGO database (Rudzicz et al. 2012).",
+    stat:"📊 Literature: 80–88% accuracy (acoustic features + CNN, TORGO dataset)"},
+  als:{icon:'🔬',color:'#EEFAF4',title:"ALS & Multiple Sclerosis",sub:"Motor neuron and demyelinating disorders",badge:{text:"~100K ALS patients in India",bg:"#EEFAF4",color:"#0F6E56"},
+    overview:"ALS causes progressive motor neuron degeneration. MS is an autoimmune demyelinating disease. Both significantly affect voice production.",
+    symptoms:[{dot:"#0F6E56",text:"ALS: Progressive muscle weakness starting in limbs or speech/swallowing"},{dot:"#0F6E56",text:"MS: Fatigue, vision problems, numbness, coordination difficulties"},{dot:"#5A8AC9",text:"ALS voice: hoarseness, hypernasality, voice fatigue, breathiness"},{dot:"#5A8AC9",text:"MS voice: dysarthria, imprecise articulation, variable pitch control"}],
+    voice:"NeuroVox screens for: <strong>hoarseness</strong> (high ZCR + spectral flux) and <strong>voice fatigue</strong> (declining RMS over time). Based on ALS TDI Voice Studies (2018) and Lausen et al. Interspeech 2020.",
+    stat:"📊 ALS: 76–85% (RF + openSMILE) · MS: 74–82% (SVM, COMPARE feature set)"}
+};
+
+const DISORDER_TRANSLATED={
+  hi:{pd:{title:"पार्किंसन रोग",sub:"प्रगतिशील न्यूरोडीजेनेरेटिव विकार",badge:{text:"भारत में 7.71 लाख मरीज़"},overview:"पार्किंसन रोग मस्तिष्क में डोपामाइन उत्पन्न करने वाले न्यूरॉन्स को प्रभावित करता है।",symptoms:[{text:"विश्राम कंपन — आराम के समय हाथ का कंपन, आमतौर पर एक तरफ से शुरू"},{text:"ब्रैडीकिनेसिया — धीमी गति, चलते समय हाथ कम हिलाना"},{text:"कठोरता — मांसपेशियों की जकड़न"},{text:"हाइपोफोनिया — धीमी, एकसुर आवाज़"},{text:"माइक्रोग्राफिया — धीरे-धीरे छोटी होती लिखावट"},{text:"अवसाद, नींद की समस्या, गंध न आना (प्रारंभिक संकेत)"}]},alz:{title:"अल्जाइमर और मनोभ्रंश",sub:"प्रगतिशील संज्ञानात्मक गिरावट",badge:{text:"भारत में 88 लाख प्रभावित"},overview:"अल्जाइमर मनोभ्रंश का सबसे सामान्य रूप है जो स्मृती और संज्ञानात्मक क्षमता को प्रभावित करता है।",symptoms:[{text:"स्मृति लोप — हाल की घटनाएं भूलना"},{text:"शब्द खोजने में कठिनाई — लंबे रुकाव, अस्पष्ट शब्द"},{text:"भटकाव — समय, स्थान में भ्रम"},{text:"सहज भाषण में कम शब्दकोश"},{text:"भरे हुए रुकाव के साथ धीमी भाषण दर"}]},stroke:{title:"स्ट्रोक और डिसार्थ्रिया",sub:"मस्तिष्कवाहिकीय घटना",badge:{text:"भारत में मृत्यु का तीसरा कारण"},overview:"स्ट्रोक तब होता है जब मस्तिष्क को रक्त आपूर्ति बाधित होती है।",symptoms:[{text:"FAST: चेहरे का लटकना, हाथ की कमज़ोरी, बोलने में कठिनाई, तुरंत सहायता लें"},{text:"अचानक तेज़ सिरदर्द, भ्रम, दृष्टि समस्याएं"},{text:"डिसार्थ्रिया — अस्पष्ट, अशुद्ध व्यंजन"},{text:"वाचाघात — भाषा समझने में कठिनाई"}]},als:{title:"ALS और मल्टीपल स्केलेरोसिस",sub:"मोटर न्यूरॉन और डिमाइलिनेटिंग विकार",badge:{text:"भारत में ~1 लाख ALS रोगी"},overview:"ALS प्रगतिशील मोटर न्यूरॉन अपघटन का कारण बनता है। MS एक ऑटोइम्यून रोग है।",symptoms:[{text:"ALS: हाथ या बोलने में प्रगतिशील मांसपेशी कमज़ोरी"},{text:"MS: थकान, दृष्टि समस्याएं, सुन्नता"},{text:"ALS आवाज़: कर्कशता, आवाज़ थकान"},{text:"MS आवाज़: डिसार्थ्रिया, अशुद्ध उच्चारण"}]}},
+  ta:{pd:{title:"பார்கின்சன் நோய்",sub:"முற்போக்கான நரம்பியல் சிதைவு",badge:{text:"இந்தியாவில் 7.71 லட்சம் நோயாளிகள்"},overview:"பார்கின்சன் நோய் மூளையில் டோபமைன் உற்பத்தி செய்யும் நரம்பணுக்களை பாதிக்கிறது.",symptoms:[{text:"ஓய்வு நடுக்கம் — ஓய்வில் கையில் நடுக்கம்"},{text:"பிராடிகினேசியா — மெதுவான இயக்கம்"},{text:"கடினத்தன்மை — தசை இறுக்கம்"},{text:"ஹைபோஃபோனியா — மென்மையான, ஒரே சுரமான குரல்"},{text:"மைக்ரோகிராபியா — சிறிதாகும் கையெழுத்து"}]},alz:{title:"அல்சைமர் மற்றும் மறதி நோய்",sub:"முற்போக்கான அறிவாற்றல் வீழ்ச்சி",badge:{text:"இந்தியாவில் 88 லட்சம் பாதிக்கப்பட்டோர்"},overview:"அல்சைமர் மறதி நோயின் மிகவும் பொதுவான வடிவமாகும்.",symptoms:[{text:"நினைவாற்றல் இழப்பு — சமீபத்திய நிகழ்வுகளை மறந்தல்"},{text:"வார்த்தை கண்டுபிடிக்கும் சிரமம்"},{text:"திசைதிரிப்பு — நேரம், இடம் குழப்பம்"},{text:"இயல்பான பேச்சில் குறைந்த சொல்லகராதி"}]},stroke:{title:"பக்கவாதம் மற்றும் டிசார்த்ரியா",sub:"மூளை இரத்த நாள நிகழ்வு",badge:{text:"இந்தியாவில் மரணத்தின் 3வது காரணம்"},overview:"பக்கவாதம் மூளைக்கு இரத்த ஓட்டம் தடைப்படும்போது ஏற்படுகிறது.",symptoms:[{text:"FAST: முகம் தொங்குவது, கை பலவீனம், பேச்சு சிரமம், அவசர சிகிச்சை"},{text:"திடீர் கடுமையான தலைவலி, குழப்பம்"},{text:"டிசார்த்ரியா — மழுங்கிய, தெளிவற்ற உச்சரிப்பு"},{text:"அஃபேசியா — மொழி புரிந்துகொள்வதில் சிரமம்"}]},als:{title:"ALS மற்றும் மல்டிபிள் ஸ்க்லீரோசிஸ்",sub:"மோட்டார் நரம்பணு கோளாறுகள்",badge:{text:"இந்தியாவில் ~1 லட்சம் ALS நோயாளிகள்"},overview:"ALS முற்போக்கான மோட்டார் நரம்பணு சிதைவை ஏற்படுத்துகிறது.",symptoms:[{text:"ALS: முற்போக்கான தசை பலவீனம்"},{text:"MS: சோர்வு, பார்வை பிரச்சினைகள்"},{text:"ALS குரல்: கரகரப்பு, குரல் சோர்வு"},{text:"MS குரல்: டிசார்த்ரியா, தெளிவற்ற உச்சரிப்பு"}]}},
+  bn:{pd:{title:"পার্কিনসন রোগ",sub:"প্রগতিশীল নিউরোডিজেনারেটিভ ব্যাধি",badge:{text:"ভারতে ৭.৭১ লাখ রোগী"},overview:"পার্কিনসন রোগ মস্তিষ্কে ডোপামিন উৎপাদনকারী নিউরনকে প্রভাবিত করে।",symptoms:[{text:"বিশ্রামকালীন কম্পন — বিশ্রামে হাত কাঁপা"},{text:"ব্র্যাডিকাইনেসিয়া — ধীর গতিবিধি"},{text:"কঠোরতা — পেশী শক্ততা"},{text:"হাইপোফোনিয়া — নরম, একঘেয়ে কণ্ঠস্বর"},{text:"মাইক্রোগ্রাফিয়া — ক্রমশ ছোট হাতের লেখা"}]},alz:{title:"আলঝেইমার ও ডিমেনশিয়া",sub:"প্রগতিশীল জ্ঞানশক্তির অবনতি",badge:{text:"ভারতে ৮৮ লাখ আক্রান্ত"},overview:"আলঝেইমার ডিমেনশিয়ার সবচেয়ে সাধারণ রূপ।",symptoms:[{text:"স্মৃতি হারানো — সাম্প্রতিক ঘটনা ভুলে যাওয়া"},{text:"শব্দ খুঁজে পেতে অসুবিধা"},{text:"বিভ্রান্তি — সময়, স্থান, চেনা মুখ"},{text:"স্বতঃস্ফূর্ত কথায় সীমিত শব্দভান্ডার"}]},stroke:{title:"স্ট্রোক ও ডিসার্থ্রিয়া",sub:"সেরিব্রোভাসকুলার ঘটনা",badge:{text:"ভারতে মৃত্যুর ৩য় কারণ"},overview:"রক্ত সরবরাহ বাধাগ্রস্ত হলে স্ট্রোক হয়।",symptoms:[{text:"FAST: মুখ ঝুলে পড়া, হাত দুর্বলতা, কথার সমস্যা"},{text:"হঠাৎ তীব্র মাথাব্যথা, বিভ্রান্তি"},{text:"ডিসার্থ্রিয়া — অস্পষ্ট উচ্চারণ"},{text:"অ্যাফেসিয়া — ভাষা বোঝায় অসুবিধা"}]},als:{title:"ALS ও মাল্টিপল স্ক্লেরোসিস",sub:"মোটর নিউরন ব্যাধি",badge:{text:"ভারতে ~১ লাখ ALS রোগী"},overview:"ALS প্রগতিশীল মোটর নিউরন অবনতি ঘটায়।",symptoms:[{text:"ALS: প্রগতিশীল পেশী দুর্বলতা"},{text:"MS: ক্লান্তি, দৃষ্টি সমস্যা, সমন্বয় অসুবিধা"},{text:"ALS কণ্ঠ: কর্কশতা, কণ্ঠ ক্লান্তি"},{text:"MS কণ্ঠ: ডিসার্থ্রিয়া, অস্পষ্ট উচ্চারণ"}]}},
+  te:{pd:{title:"పార్కిన్సన్ వ్యాధి",sub:"ప్రగతిశీల నాడీ క్షీణత",badge:{text:"భారతలో 7.71 లక్షల రోగులు"},overview:"పార్కిన్సన్ వ్యాధి మెదడులో డోపమైన్ ఉత్పత్తి చేసే న్యూరాన్లను ప్రభావితం చేస్తుంది.",symptoms:[{text:"విశ్రాంతి వణుకు — విశ్రాంతిలో చేయి వణికడం"},{text:"బ్రాడికినేసియా — నెమ్మదైన కదలిక"},{text:"దృఢత్వం — కండరాల బిగువు"},{text:"హైపోఫోనియా — మృదువైన, ఏకస్వర గొంతు"},{text:"మైక్రోగ్రాఫియా — చిన్నగా అయ్యే చేతిరాత"}]},alz:{title:"అల్జీమర్స్ మరియు డిమెన్షియా",sub:"ప్రగతిశీల అభిజ్ఞాన క్షీణత",badge:{text:"భారతలో 88 లక్షల మంది ప్రభావితులు"},overview:"అల్జీమర్స్ అత్యంత సాధారణ డిమెన్షియా.",symptoms:[{text:"జ్ఞాపకశక్తి నష్టం — ఇటీవలి సంఘటనలు మరచిపోవడం"},{text:"పదం కనుగొనడంలో ఇబ్బంది"},{text:"దిక్కుతోచని స్థితి — సమయం, స్థలం"},{text:"స్వాభావిక మాటల్లో పరిమిత పదజాలం"}]},stroke:{title:"స్ట్రోక్ మరియు డిసార్థ్రియా",sub:"మెదడు వాస్కులర్ సంఘటన",badge:{text:"భారతలో మరణానికి 3వ కారణం"},overview:"మెదడుకు రక్త సరఫరా అడ్డుపడినప్పుడు స్ట్రోక్ వస్తుంది.",symptoms:[{text:"FAST: ముఖం వేలాడడం, చేయి బలహీనత, మాటల సమస్య"},{text:"హఠాత్ తీవ్రమైన తలనొప్పి, గందరగోళం"},{text:"డిసార్థ్రియా — అస్పష్టమైన ఉచ్చారణ"},{text:"అఫేసియా — భాషను అర్థం చేసుకోవడంలో ఇబ్బంది"}]},als:{title:"ALS మరియు మల్టిపుల్ స్క్లెరోసిస్",sub:"మోటర్ న్యూరాన్ రుగ్మతలు",badge:{text:"భారతలో ~1 లక్ష ALS రోగులు"},overview:"ALS ప్రగతిశీల మోటర్ న్యూరాన్ క్షీణతను కలిగిస్తుంది.",symptoms:[{text:"ALS: ప్రగతిశీల కండరాల బలహీనత"},{text:"MS: అలసట, దృష్టి సమస్యలు, సమన్వయ ఇబ్బందులు"},{text:"ALS గొంతు: కర్కశత, గొంతు అలసట"},{text:"MS గొంతు: డిసార్థ్రియా, అస్పష్ట ఉచ్చారణ"}]}},
+  mr:{pd:{title:"पार्किन्सन आजार",sub:"प्रगतिशील न्यूरोडिजेनेरेटिव विकार",badge:{text:"भारतात 7.71 लाख रुग्ण"},overview:"पार्किन्सन आजार मेंदूतील डोपामाइन तयार करणाऱ्या न्यूरॉन्सवर परिणाम करतो.",symptoms:[{text:"विश्रांतीतील थरथर — विश्रांतीत हात थरथरणे"},{text:"ब्रॅडीकिनेसिया — मंद हालचाल"},{text:"कठोरता — स्नायू जड होणे"},{text:"हायपोफोनिया — मंद, एकसुरी आवाज"},{text:"मायक्रोग्राफिया — लहान होत जाणारी हस्ताक्षरे"}]},alz:{title:"अल्झायमर आणि स्मृतिभ्रंश",sub:"प्रगतिशील संज्ञानात्मक घट",badge:{text:"भारतात 88 लाख प्रभावित"},overview:"अल्झायमर हा स्मृतिभ्रंशाचा सर्वात सामान्य प्रकार आहे.",symptoms:[{text:"स्मृती हानी — अलीकडील घटना विसरणे"},{text:"शब्द शोधण्यात अडचण"},{text:"दिशाभ्रम — वेळ, ठिकाण"},{text:"उत्स्फूर्त भाषणात मर्यादित शब्दसंग्रह"}]},stroke:{title:"स्ट्रोक आणि डिसार्थ्रिया",sub:"सेरेब्रोव्हॅस्क्युलर घटना",badge:{text:"भारतात मृत्यूचे तिसरे कारण"},overview:"मेंदूला रक्तपुरवठा खंडित झाल्यावर स्ट्रोक होतो.",symptoms:[{text:"FAST: चेहरा लटकणे, हात कमकुवत, बोलण्यात अडचण"},{text:"अचानक तीव्र डोकेदुखी, गोंधळ"},{text:"डिसार्थ्रिया — अस्पष्ट उच्चार"},{text:"अफेसिया — भाषा समजण्यात अडचण"}]},als:{title:"ALS आणि मल्टिपल स्क्लेरोसिस",sub:"मोटर न्यूरॉन विकार",badge:{text:"भारतात ~1 लाख ALS रुग्ण"},overview:"ALS प्रगतिशील मोटर न्यूरॉन ऱ्हास कारणीभूत आहे.",symptoms:[{text:"ALS: हात किंवा बोलण्यात प्रगतिशील स्नायू कमकुवतपणा"},{text:"MS: थकवा, दृष्टी समस्या, समन्वय अडचण"},{text:"ALS आवाज: कर्कशपणा, आवाज थकवा"},{text:"MS आवाज: डिसार्थ्रिया, अशुद्ध उच्चार"}]}}
+};
+function getDisorderData(key){
+  const base=DISORDER_DATA[key];if(!base)return null;
+  const t=(DISORDER_TRANSLATED[currentLang]||{})[key];if(!t)return base;
+  return Object.assign({},base,{title:t.title,sub:t.sub,
+    badge:Object.assign({},base.badge,{text:t.badge.text}),
+    overview:t.overview,
+    symptoms:t.symptoms.map((s,i)=>({dot:(base.symptoms[i]||{dot:'#0D7C7C'}).dot,text:s.text}))});
+}
+function openDisorderModal(key){
+  const d=getDisorderData(key);if(!d)return;
+  const L=LANGS[currentLang]||LANGS.en;
+  document.getElementById('diModalIcon').style.background=d.color;
+  document.getElementById('diModalIcon').textContent=d.icon;
+  document.getElementById('diModalTitle').textContent=d.title;
+  document.getElementById('diModalSub').textContent=d.sub;
+  const symp=d.symptoms.map(s=>`<div class="dis-symptom"><div class="dis-symptom-dot" style="background:${s.dot}"></div><div>${s.text}</div></div>`).join('');
+  document.getElementById('diModalBody').innerHTML=`<div class="dis-badge" style="background:${d.badge.bg};color:${d.badge.color};">${d.badge.text}</div><div class="dis-section"><div class="dis-section-title">${L.di_overview||'Overview'}</div><p style="font-size:11px;color:#2A4A5A;line-height:1.65;">${d.overview}</p></div><div class="dis-section"><div class="dis-section-title">${L.di_symptoms||'Key Symptoms'}</div><div class="dis-symptom-list">${symp}</div></div><div class="dis-section"><div class="dis-section-title">${L.di_screens||'What NeuroVox Screens For'}</div><div class="dis-voice-box"><p>${d.voice}</p></div><div class="dis-stat">${d.stat}</div></div><div style="height:8px;"></div>`;
+  document.getElementById('disorderModal').classList.add('open');
+}
+function closeDisorderModal(){document.getElementById('disorderModal').classList.remove('open');}
+
+/* ─── QUESTIONNAIRE ──────────────────────────────────────── */
+function selectOpt(el){el.parentElement.querySelectorAll('.q-opt').forEach(s=>s.classList.remove('selected'));el.classList.add('selected');}
+
+function rebuildQuestionnaire(L){
+  const body=document.getElementById('questBody');if(!body||!L.qa1)return;
+  const EN=LANGS.en;
+  function qc(qid,q,note,opts,enOpts,isConf){
+    const cC=isConf?' q-confound':'',cB=isConf?'<div class="confound-badge">⚠ Confounder</div>':'';
+    const nH=note?`<p class="q-note">${note}</p>`:'';
+    const oH=opts.map((o,i)=>`<button class="q-opt" onclick="selectOpt(this)" data-en="${((enOpts||opts)[i]||o).replace(/"/g,'&quot;')}">${o}</button>`).join('');
+    return `<div class="q-card${cC}" data-qid="${qid}">${cB}<div class="q-text">${q}</div>${nH}<div class="q-options">${oH}</div></div>`;
+  }
+  function sl(t,n){return `<div class="q-section-label">${t}${n?` <span style="font-weight:400;color:#CC4400;">${n}</span>`:''}</div>`;}
+  body.innerHTML=
+    sl(L.secA)+qc('age_group',L.qa1,'',L.qa1opts,EN.qa1opts)+qc('biological_sex',L.qa2,'',L.qa2opts,EN.qa2opts)+qc('mother_tongue',L.qa3,'',L.qa3opts,EN.qa3opts)+
+    sl(L.secB)+qc('tremors_at_rest',L.qb1,L.qb1note,L.qb1opts,EN.qb1opts)+qc('micrographia',L.qb2,L.qb2note,L.qb2opts,EN.qb2opts)+qc('word_finding_difficulty',L.qb3,L.qb3note,L.qb3opts,EN.qb3opts)+qc('memory_lapses',L.qb4,'',L.qb4opts,EN.qb4opts)+qc('voice_change',L.qb5,L.qb5note,L.qb5opts,EN.qb5opts)+qc('muscle_weakness_facial_droop',L.qb6,L.qb6note,L.qb6opts,EN.qb6opts)+qc('dysphagia',L.qb7,L.qb7note,L.qb7opts,EN.qb7opts)+
+    sl(L.secC,L.secCnote)+qc('current_illness',L.qc1,L.qc1note,L.qc1opts,EN.qc1opts,true)+qc('smoking_history',L.qc2,L.qc2note,L.qc2opts,EN.qc2opts,true)+qc('respiratory_conditions',L.qc3,L.qc3note,L.qc3opts,EN.qc3opts,true)+qc('throat_surgery',L.qc4,L.qc4note,L.qc4opts,EN.qc4opts,true)+qc('relevant_medications',L.qc5,'',L.qc5opts,EN.qc5opts,true)+
+    sl(L.secD)+qc('family_history_neuro',L.qd1,L.qd1note,L.qd1opts,EN.qd1opts)+qc('depression_anxiety_history',L.qd2,L.qd2note,L.qd2opts,EN.qd2opts)+qc('hypertension_diabetes',L.qd3,L.qd3note,L.qd3opts,EN.qd3opts)+qc('prior_stroke_tia',L.qd4,'',L.qd4opts,EN.qd4opts)+qc('existing_neuro_diagnosis',L.qd5,L.qd5note,L.qd5opts,EN.qd5opts);
+}
+function collectAnswers(){
+  const a={},aEn={};
+  document.querySelectorAll('.q-card[data-qid]').forEach(c=>{
+    const qid=c.getAttribute('data-qid'),sel=c.querySelector('.q-opt.selected');
+    a[qid]=sel?sel.textContent.trim():null;
+    aEn[qid]=sel?(sel.getAttribute('data-en')||sel.textContent.trim()):null;
+  });
+  const r=Object.assign({},a);r._en=aEn;return r;
+}
+function showQuestSummary(answers){
+  const L=LANGS[currentLang]||LANGS.en;
+  const labels={age_group:L.qa1,biological_sex:L.qa2,mother_tongue:L.qa3,tremors_at_rest:L.qb1,micrographia:L.qb2,word_finding_difficulty:L.qb3,memory_lapses:L.qb4,voice_change:L.qb5,muscle_weakness_facial_droop:L.qb6,dysphagia:L.qb7,current_illness:L.qc1,smoking_history:L.qc2,respiratory_conditions:L.qc3,throat_surgery:L.qc4,relevant_medications:L.qc5,family_history_neuro:L.qd1,depression_anxiety_history:L.qd2,hypertension_diabetes:L.qd3,prior_stroke_tia:L.qd4,existing_neuro_diagnosis:L.qd5};
+  const conf=new Set(['current_illness','smoking_history','respiratory_conditions','throat_surgery','relevant_medications']);
+  const sec=document.getElementById('questSummarySection'),body=document.getElementById('questSummaryBody');
+  if(!sec||!body)return;sec.style.display='block';
+  const lbl=document.getElementById('s6-qs-lbl');if(lbl&&L.s6qs_lbl)lbl.textContent=L.s6qs_lbl;
+  body.innerHTML=Object.entries(labels).map(([qid,label])=>{
+    const val=answers[qid],isC=conf.has(qid),flagged=isC&&val&&!['No','None','Never','No diagnosis'].includes(answers._en&&answers._en[qid]||val);
+    const vc=!val?'#C0C8D0':flagged?'#CC4400':'#0A2342';
+    return `<div class="qs-row" style="background:${isC?'#FFF8F4':'white'};border:1px solid ${isC?'#FFD0B0':'#E8EEF0'};"><span class="qs-key">${label||qid}</span><span class="qs-val" style="color:${vc};">${val||'—'}</span></div>`;
+  }).join('');
+}
+
+/* ─── DOWNLOAD ───────────────────────────────────────────── */
+async function downloadDataPackage(){
+  const S=window._nv_scores,answers=collectAnswers(),enAns=answers._en||answers;
+  const ts=new Date().toISOString().replace(/[:.]/g,'_'),sid='NV_'+ts;
+  if(typeof JSZip==='undefined'){alert('JSZip not loaded. Check internet connection.');return;}
+  const zip=new JSZip();
+  zip.file('acoustic_features.json',JSON.stringify({
+    session_id:sid,timestamp:new Date().toISOString(),schema_version:'1.0',tool:'NeuroVox Prototype v1.0 - DPSRU',language:currentLang,
+    recording:{duration_seconds:window._nv_dur||0,signal_quality:window._nv_qual||'unknown',voiced_frames:buf.voicedCount,total_frames:buf.totalFrames,voice_ratio:buf.totalFrames>0?parseFloat((buf.voicedCount/buf.totalFrames).toFixed(3)):0},
+    acoustic_features:{
+      pitch_f0_hz:{mean:S?Math.round(S.meanPitch):null,std_dev:S?Math.round(S.pitchStdV):null,stability_pct:S?Math.round(S.stability):null,n_voiced_frames:buf.pitch.length,all_values:buf.pitch.map(v=>Math.round(v))},
+      loudness_rms_db:{mean:S?Math.round(S.meanRms):null,all_values:buf.rms.map(v=>parseFloat(v.toFixed(2)))},
+      spectral_centroid_hz:{mean:S?Math.round(S.meanSC):null,all_values:buf.sc.map(v=>Math.round(v))},
+      zero_crossing_rate:{mean:S?parseFloat(S.meanZCR.toFixed(4)):null,all_values:buf.zcr.map(v=>parseFloat(v.toFixed(4)))},
+      spectral_flux:{mean:S?parseFloat(S.meanFlux.toFixed(4)):null,all_values:buf.flux.map(v=>parseFloat(v.toFixed(4)))},
+      spectral_rolloff_hz:{mean:S?Math.round(S.meanRoll):null,all_values:buf.rolloff.map(v=>Math.round(v))}
+    },
+    heuristic_risk_scores:{NOTE:'Rule-based estimates ONLY. Not ML predictions. Not clinically validated.',parkinson_pct:S?S.pd:null,alzheimer_pct:S?S.alz:null,stroke_pct:S?S.stroke:null,als_pct:S?S.als:null,ms_pct:S?S.ms:null},
+    confounders:{current_illness:(enAns.current_illness)||null,smoking_history:(enAns.smoking_history)||null,respiratory_conditions:(enAns.respiratory_conditions)||null,throat_surgery:(enAns.throat_surgery)||null,relevant_medications:(enAns.relevant_medications)||null}
+  },null,2));
+  const qLabels={age_group:'Age group',biological_sex:'Biological sex',mother_tongue:'Mother tongue',tremors_at_rest:'Tremors at rest',micrographia:'Micrographia',word_finding_difficulty:'Word-finding difficulty',memory_lapses:'Memory lapses',voice_change:'Voice change',muscle_weakness_facial_droop:'Muscle weakness/facial droop',dysphagia:'Dysphagia',current_illness:'Current illness (CONFOUNDER)',smoking_history:'Smoking history (CONFOUNDER)',respiratory_conditions:'Respiratory conditions (CONFOUNDER)',throat_surgery:'Throat surgery (CONFOUNDER)',relevant_medications:'Relevant medications (CONFOUNDER)',family_history_neuro:'Family history (neuro)',depression_anxiety_history:'Depression/anxiety history',hypertension_diabetes:'Hypertension/diabetes',prior_stroke_tia:'Prior stroke/TIA',existing_neuro_diagnosis:'Existing neuro diagnosis'};
+  const confSet=new Set(['current_illness','smoking_history','respiratory_conditions','throat_surgery','relevant_medications']);
+  zip.file('questionnaire_responses.csv',['# NeuroVox Data Export',`# Session: ${sid}`,`# Timestamp: ${new Date().toISOString()}`,`# Language used: ${currentLang}`,`# NOTE: All answers stored in English regardless of language selected.`,`# Review is_confounder=TRUE fields before ML training`,'','question_id,question_en,answer_en,is_confounder',...Object.entries(qLabels).map(([qid,label])=>{const ans=((enAns[qid])||'').replace(/,/g,' ').replace(/"/g,"'");return `${qid},"${label}","${ans}",${confSet.has(qid)?'TRUE':'FALSE'}`;})].join('\n'));
+  zip.file('README.txt',['# NeuroVox Data Package',`Session: ${sid}`,`Exported: ${new Date().toLocaleString()}`,'','## Files','- acoustic_features.json  Frame-by-frame acoustic measurements + heuristic scores','- questionnaire_responses.csv  20 answers in English with confounder flags','- recording.*  Raw voice audio (WebM)','','## ML Usage','1. pitch_f0_hz.all_values = time-series array for LSTM','2. Mean values = features for SVM/RF','3. existing_neuro_diagnosis = candidate label field','4. heuristic_risk_scores are NOT labels','5. Filter is_confounder=TRUE rows with non-benign values before training','','Research use only. DPSRU Innovation Foundation.'].join('\n'));
+  if(window._nv_audioBlob&&window._nv_audioBlob.size>0){const ext=(window._nv_audioBlob.type||'').includes('webm')?'webm':'ogg';zip.file('recording.'+ext,window._nv_audioBlob);}
+  const btnSpan=document.getElementById('s6-download-btn');if(btnSpan)btnSpan.textContent='Preparing…';
+  try{const content=await zip.generateAsync({type:'blob',compression:'DEFLATE'});const url=URL.createObjectURL(content);const a=document.createElement('a');a.href=url;a.download=sid+'.zip';a.click();URL.revokeObjectURL(url);if(btnSpan)btnSpan.textContent='Downloaded ✓';}
+  catch(e){if(btnSpan)btnSpan.textContent='Error: '+e.message;}
+}
+
+/* ─── NAVIGATION ─────────────────────────────────────────── */
+let currentLang='en',currentScreen=1;
+function setLang(lang,btn){currentLang=lang;document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');applyLang(lang);}
+function goTo(n){document.getElementById('s'+currentScreen).classList.remove('active');document.getElementById('s'+n).classList.add('active');currentScreen=n;document.querySelectorAll('.snav-btn').forEach((b,i)=>{b.classList.toggle('cur',i===n-1);});if(recording)stopRecord();if(n===6)setTimeout(populateResults,80);}
+function selectLangCard(el,lang){document.querySelectorAll('.lang-card').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');currentLang=lang;applyLang(lang);}
+
+/* ─── LANGS ─────────────────────────────────────────────── */
+const LANGS={
+  en:{s1sub:"The Voice of Your Brain",s1tagline:"AI-powered neurological screening using your voice — free, non-invasive, multilingual.",s1btn:"Get Started",s2title:"Choose your language",s2sub:"NeuroVox works in 12+ Indian languages",s2btn:"Continue →",s3greet:"Good morning,",s3name:"Welcome back",s3streak:"Last scan: 3 days ago · Low risk",s3scanlbl:"QUICK SCAN",s3qsctitle:"Start Voice Scan",s3qscsub:"Takes 60 seconds · 5 disorders screened",s3qscbtn:"Tap to begin →",s3dislbl:"DISORDERS SCREENED",s3lastlbl:"LAST RESULT",s3lsclbl:"Parkinson's risk",s3lscbadge:"Low Risk",dis1:"Parkinson's",dis2:"Alzheimer's",dis3:"Stroke",dis4:"ALS & MS",nb1:"Home",nb2:"Scan",nb3:"Results",nb4:"Profile",s4title:"Voice Scan",s4tasknum:"TASK 2 OF 3",s4tasktitle:"Sustained Vowel",s4taskinst:'Take a deep breath and say "aaah" in a steady voice for as long as comfortable.',s4taskex:'"Aaaaaah..." (hold for 5–8 seconds)',s4tip:"💡 Tap the mic to start. Find a quiet place, hold phone 20–30cm away.",s4next:"Next Task →",micstatus:"Tap to record",s5title:"Health Questionnaire",secA:"A · Demographics & Background",secB:"B · Neurological Symptoms",secC:"C · Voice Confounders",secCnote:"(affects analysis accuracy)",secD:"D · Relevant Medical History",qa1:"Age group",qa1opts:["Under 30","30–45","46–60","60+"],qa2:"Biological sex",qa2opts:["Male","Female","Other"],qa3:"Mother tongue",qa3opts:["Hindi","English","Tamil","Other"],qb1:"Have you noticed tremors or shaking in your hands when at rest?",qb1opts:["Never","Rarely","Sometimes","Often"],qb1note:"",qb2:"Has your handwriting become noticeably smaller recently?",qb2opts:["No","Slightly","Yes"],qb2note:"Micrographia — a common early Parkinson's indicator",qb3:"Do you struggle to find the right word while speaking?",qb3opts:["Never","Sometimes","Often"],qb3note:"Word-finding difficulty — screened in Alzheimer's assessment",qb4:"Have you had memory lapses or confusion recently?",qb4opts:["No","Occasionally","Frequently"],qb5:"Has your voice become softer, hoarser, or harder to hear?",qb5opts:["No","Slightly","Yes, noticeably"],qb5note:"Hypophonia — common in both Parkinson's and ALS",qb6:"Do you experience sudden muscle weakness or facial drooping?",qb6opts:["Never","Past episode","Currently"],qb6note:"Potential stroke warning sign — report to a doctor immediately if ongoing",qb7:"Do you have difficulty swallowing or experience choking on food?",qb7opts:["No","Occasionally","Frequently"],qb7note:"Dysphagia — a feature of ALS and advanced Parkinson's",qc1:"Do you currently have a cold, throat infection, or laryngitis?",qc1opts:["No","Mild symptoms","Yes, active illness"],qc1note:"Acute illness significantly alters voice acoustics and may skew results",qc2:"Do you smoke or have a history of heavy smoking?",qc2opts:["Never","Ex-smoker","Current smoker"],qc2note:"Smoking causes chronic vocal cord thickening, lowering F0 and altering shimmer",qc3:"Do you have asthma, COPD, or other chronic respiratory conditions?",qc3opts:["None","Mild / controlled","Severe / active"],qc3note:"Respiratory illness affects breath support and phonation, altering RMS and HNR",qc4:"Have you had any throat surgery, vocal cord procedures, or intubation?",qc4opts:["No","Yes, over 1 yr ago","Yes, recent"],qc4note:"Structural changes to the larynx permanently alter acoustic parameters",qc5:"Are you taking medications that affect voice or nervous system?",qc5opts:["No","Unsure","Yes"],qd1:"Has any first-degree relative been diagnosed with Parkinson's or Alzheimer's?",qd1opts:["No","Parkinson's","Alzheimer's","Both"],qd1note:"Family history increases genetic risk significantly",qd2:"Have you ever been diagnosed with depression or anxiety?",qd2opts:["No","History only","Currently"],qd2note:"Mental health conditions are early non-motor symptoms of Parkinson's",qd3:"Do you have hypertension (high blood pressure) or diabetes?",qd3opts:["Neither","Hypertension","Diabetes","Both"],qd3note:"Both are major risk factors for stroke-related dysarthria",qd4:"Have you had a prior stroke or TIA (mini-stroke)?",qd4opts:["No","TIA only","Full stroke"],qd5:"Have you already received any neurological diagnosis?",qd5opts:["No diagnosis","Under evaluation","Yes, diagnosed"],qd5note:"Important for calibrating model outputs",s5btn:"Analyse My Voice →",s6badge:"Analysis Complete",s6name:"Your Screening Report",s6sub:"Based on voice analysis + symptom questionnaire",s6risklbl:"RISK LEVELS",s6qs_lbl:"YOUR RESPONSES",s6alerttitle:"Moderate Risk Detected",s6alertbody:"Voice patterns suggest some indicators associated with early Parkinson's. Heuristic estimate only — consult a neurologist.",s6reftitle:"Book Neurologist Consultation",s6refdesc:"Nearest specialist: 2.4 km away · Available tomorrow",s6refcta:"Book Appointment →",s6disc:"This is a screening tool, not a medical diagnosis. Always consult a qualified doctor.",s6download:"Download Data Package (.zip)",s6downloadnote:"Includes: audio recording + acoustic features (JSON) + questionnaire (CSV)",diLearnMore:"Tap to learn more ›",di_overview:"Overview",di_symptoms:"Key Symptoms",di_screens:"What NeuroVox Screens For",dc_desc1:"Voice tremor",dc_desc2:"Word finding",dc_desc3:"Articulation",dc_desc4:"Voice fatigue",lbl_live:"Live Voice Metrics",lbl_pitch:"Pitch (F0)",lbl_rms:"Loudness (RMS)",lbl_sc:"Spectral Centroid",lbl_zcr:"ZCR · Irregularity",lbl_flux:"Spectral Flux",lbl_rolloff:"Spectral Rolloff",lbl_voiced:"Voiced Frames",lbl_stab:"Pitch Stability",lbl_frames:"frames",vsc_pitch:"Avg Pitch (F0)",vsc_rms:"Loudness (RMS)",vsc_sc:"Spectral Centroid",vsc_zcr:"ZCR",vsc_flux:"Spectral Flux",vsc_stab:"Pitch Stability",vsc_dur:"Duration",vsc_qual:"Signal quality",qual_good:"Good signal",qual_weak:"Weak — speak louder",qual_bad:"Too quiet",dis_names:["Parkinson's","Alzheimer's","Stroke","ALS","MS"],risk_elevated:"Elevated Signal Detected",risk_short:"Recording Too Short",risk_low:"Low Risk Pattern",risk_short_body:"Please record at least 5 seconds of voice.",voiceAnalysisTitle:"Your Voice Analysis",voiceRawNote:"Raw acoustic measurements. Risk scores are rule-based estimates — not ML predictions."},
+  hi:{s1sub:"आपके मस्तिष्क की आवाज़",s1tagline:"आवाज़ से न्यूरोलॉजिकल जांच — मुफ़्त, गैर-आक्रामक, बहुभाषी।",s1btn:"शुरू करें",s2title:"अपनी भाषा चुनें",s2sub:"NeuroVox 12+ भारतीय भाषाओं में काम करता है",s2btn:"आगे बढ़ें →",s3greet:"सुप्रभात,",s3name:"वापसी पर स्वागत",s3streak:"अंतिम जांच: 3 दिन पहले · कम जोखिम",s3scanlbl:"त्वरित जांच",s3qsctitle:"आवाज़ जांच शुरू करें",s3qscsub:"60 सेकंड · 5 विकारों की जांच",s3qscbtn:"शुरू करने के लिए टैप करें →",s3dislbl:"जांचे गए विकार",s3lastlbl:"अंतिम परिणाम",s3lsclbl:"पार्किंसन जोखिम",s3lscbadge:"कम जोखिम",dis1:"पार्किंसन",dis2:"अल्जाइमर",dis3:"स्ट्रोक",dis4:"ALS & MS",nb1:"होम",nb2:"जांच",nb3:"परिणाम",nb4:"प्रोफ़ाइल",s4title:"आवाज़ जांच",s4tasknum:"कार्य 2 / 3",s4tasktitle:"स्वर को बनाए रखें",s4taskinst:'गहरी सांस लें और "आऽऽ" कहें।',s4taskex:'"आऽऽऽऽ..." (5–8 सेकंड)',s4tip:"💡 शांत जगह चुनें। माइक टैप करें।",s4next:"अगला कार्य →",micstatus:"रिकॉर्ड करने के लिए टैप करें",s5title:"स्वास्थ्य प्रश्नावली",secA:"A · जनसांख्यिकी",secB:"B · तंत्रिका संबंधी लक्षण",secC:"C · आवाज़ को प्रभावित करने वाले कारक",secCnote:"(विश्लेषण की सटीकता पर असर)",secD:"D · चिकित्सा इतिहास",qa1:"आयु वर्ग",qa1opts:["30 से कम","30–45","46–60","60+"],qa2:"जैविक लिंग",qa2opts:["पुरुष","महिला","अन्य"],qa3:"मातृभाषा",qa3opts:["हिन्दी","English","Tamil","अन्य"],qb1:"क्या आराम के समय हाथों में कंपन महसूस किया है?",qb1opts:["कभी नहीं","कभी-कभार","कभी-कभी","अक्सर"],qb1note:"",qb2:"क्या लिखावट हाल ही में छोटी हो गई है?",qb2opts:["नहीं","थोड़ी","हाँ"],qb2note:"माइक्रोग्राफिया — पार्किंसन का प्रारंभिक संकेत",qb3:"क्या बोलते समय सही शब्द ढूंढने में कठिनाई होती है?",qb3opts:["कभी नहीं","कभी-कभी","अक्सर"],qb3note:"शब्द खोजने में कठिनाई — अल्जाइमर में जांचा जाता है",qb4:"क्या हाल ही में याददाश्त या भ्रम की समस्या हुई है?",qb4opts:["नहीं","कभी-कभी","अक्सर"],qb5:"क्या आवाज़ धीमी, कर्कश हो गई है?",qb5opts:["नहीं","थोड़ी","हाँ, स्पष्ट रूप से"],qb5note:"हाइपोफोनिया — पार्किंसन और ALS में सामान्य",qb6:"क्या अचानक मांसपेशियों की कमज़ोरी महसूस होती है?",qb6opts:["कभी नहीं","पहले हुआ था","अभी है"],qb6note:"संभावित स्ट्रोक चेतावनी — तुरंत डॉक्टर से मिलें",qb7:"क्या निगलने में कठिनाई होती है?",qb7opts:["नहीं","कभी-कभी","अक्सर"],qb7note:"डिस्फेगिया — ALS और उन्नत पार्किंसन की विशेषता",qc1:"क्या अभी सर्दी या गले का संक्रमण है?",qc1opts:["नहीं","हल्के लक्षण","हाँ, सक्रिय बीमारी"],qc1note:"तीव्र बीमारी आवाज़ को प्रभावित करती है",qc2:"क्या आप धूम्रपान करते हैं?",qc2opts:["कभी नहीं","पहले करते थे","अभी करते हैं"],qc2note:"धूम्रपान F0 को कम करता है",qc3:"क्या अस्थमा, COPD है?",qc3opts:["कोई नहीं","हल्का/नियंत्रित","गंभीर/सक्रिय"],qc3note:"श्वसन रोग RMS और HNR को प्रभावित करते हैं",qc4:"क्या गले की कोई सर्जरी हुई है?",qc4opts:["नहीं","हाँ, 1 वर्ष पहले","हाँ, हाल ही में"],qc4note:"स्वरयंत्र में बदलाव ध्वनिक मापदंड बदल देते हैं",qc5:"क्या आवाज़ या तंत्रिका तंत्र को प्रभावित करने वाली दवाएं लेते हैं?",qc5opts:["नहीं","अनिश्चित","हाँ"],qd1:"क्या किसी करीबी को पार्किंसन या अल्जाइमर हुआ है?",qd1opts:["नहीं","पार्किंसन","अल्जाइमर","दोनों"],qd1note:"पारिवारिक इतिहास आनुवंशिक जोखिम बढ़ाता है",qd2:"क्या कभी अवसाद या चिंता का निदान हुआ है?",qd2opts:["नहीं","पहले हुआ था","अभी है"],qd2note:"मानसिक स्वास्थ्य पार्किंसन के प्रारंभिक लक्षण हो सकते हैं",qd3:"क्या उच्च रक्तचाप या मधुमेह है?",qd3opts:["कोई नहीं","उच्च रक्तचाप","मधुमेह","दोनों"],qd3note:"दोनों स्ट्रोक के प्रमुख जोखिम कारक हैं",qd4:"क्या पहले स्ट्रोक या TIA हुआ है?",qd4opts:["नहीं","केवल TIA","पूर्ण स्ट्रोक"],qd5:"क्या पहले से कोई न्यूरोलॉजिकल निदान मिला है?",qd5opts:["कोई नहीं","मूल्यांकन में","हाँ, निदान हुआ"],qd5note:"मॉडल परिणामों को कैलिब्रेट करने के लिए महत्वपूर्ण",s5btn:"मेरी आवाज़ का विश्लेषण करें →",s6badge:"विश्लेषण पूर्ण",s6name:"आपकी जांच रिपोर्ट",s6sub:"आवाज़ विश्लेषण + प्रश्नावली के आधार पर",s6risklbl:"जोखिम स्तर",s6qs_lbl:"आपके उत्तर",s6alerttitle:"मध्यम जोखिम",s6alertbody:"पार्किंसन से संबंधित कुछ आवाज़ संकेत मिले हैं।",s6reftitle:"न्यूरोलॉजिस्ट से मिलें",s6refdesc:"निकटतम विशेषज्ञ: 2.4 किमी दूर",s6refcta:"अपॉइंटमेंट बुक करें →",s6disc:"यह जांच उपकरण है, चिकित्सा निदान नहीं।",s6download:"डेटा पैकेज डाउनलोड करें (.zip)",s6downloadnote:"ऑडियो + ध्वनिक विशेषताएं + प्रश्नावली",diLearnMore:"अधिक जानने के लिए टैप करें ›",di_overview:"अवलोकन",di_symptoms:"प्रमुख लक्षण",di_screens:"NeuroVox क्या जांचता है",dc_desc1:"आवाज़ कंपन",dc_desc2:"शब्द खोज",dc_desc3:"उच्चारण",dc_desc4:"आवाज़ थकान",lbl_live:"लाइव आवाज़ मेट्रिक्स",lbl_pitch:"पिच (F0)",lbl_rms:"तीव्रता (RMS)",lbl_sc:"स्पेक्ट्रल सेंट्रोइड",lbl_zcr:"ZCR · अनियमितता",lbl_flux:"स्पेक्ट्रल फ्लक्स",lbl_rolloff:"स्पेक्ट्रल रोलऑफ",lbl_voiced:"स्वर फ्रेम",lbl_stab:"पिच स्थिरता",lbl_frames:"फ्रेम",vsc_pitch:"औसत पिच (F0)",vsc_rms:"तीव्रता (RMS)",vsc_sc:"स्पेक्ट्रल सेंट्रोइड",vsc_zcr:"ZCR",vsc_flux:"स्पेक्ट्रल फ्लक्स",vsc_stab:"पिच स्थिरता",vsc_dur:"अवधि",vsc_qual:"संकेत गुणवत्ता",qual_good:"अच्छा संकेत",qual_weak:"कमज़ोर — ज़ोर से बोलें",qual_bad:"बहुत धीमा",dis_names:["पार्किंसन","अल्जाइमर","स्ट्रोक","ALS","MS"],risk_elevated:"उच्च संकेत मिला",risk_short:"रिकॉर्डिंग बहुत छोटी",risk_low:"कम जोखिम",risk_short_body:"कृपया कम से कम 5 सेकंड बोलें।",voiceAnalysisTitle:"आपका आवाज़ विश्लेषण",voiceRawNote:"कच्चे ध्वनिक माप। जोखिम स्कोर नियम-आधारित अनुमान हैं।"},
+  ta:{s1sub:"உங்கள் மூளையின் குரல்",s1tagline:"குரல் மூலம் நரம்பியல் பரிசோதனை — இலவசம், பல மொழிகளில்.",s1btn:"தொடங்கவும்",s2title:"மொழியைத் தேர்ந்தெடுக்கவும்",s2sub:"NeuroVox 12+ இந்திய மொழிகளில் செயல்படுகிறது",s2btn:"தொடர →",s3greet:"காலை வணக்கம்,",s3name:"மீண்டும் வரவேற்கிறோம்",s3streak:"கடைசி பரிசோதனை: 3 நாட்கள் முன்பு",s3scanlbl:"விரைவு ஸ்கேன்",s3qsctitle:"குரல் ஸ்கேன் தொடங்கவும்",s3qscsub:"60 வினாடிகள் · 5 நோய்கள்",s3qscbtn:"தொடங்க தட்டவும் →",s3dislbl:"பரிசோதிக்கப்படும் நோய்கள்",s3lastlbl:"கடைசி முடிவு",s3lsclbl:"பார்கின்சன் அபாயம்",s3lscbadge:"குறைந்த அபாயம்",dis1:"பார்கின்சன்",dis2:"அல்சைமர்",dis3:"பக்கவாதம்",dis4:"ALS & MS",nb1:"முகப்பு",nb2:"ஸ்கேன்",nb3:"முடிவுகள்",nb4:"சுயவிவரம்",s4title:"குரல் ஸ்கேன்",s4tasknum:"பணி 2 / 3",s4tasktitle:"நீடித்த உயிரெழுத்து",s4taskinst:'ஆழமாக சுவாசித்து "ஆஆஆ" என்று சொல்லுங்கள்.',s4taskex:'"ஆஆஆஆஆ..." (5–8 விநாடிகள்)',s4tip:"💡 அமைதியான இடம் தேர்ந்தெடுக்கவும்.",s4next:"அடுத்த பணி →",micstatus:"பதிவு செய்ய தட்டவும்",s5title:"உடல் நல கேள்வித்தாள்",secA:"A · மக்கள்தொகை",secB:"B · நரம்பியல் அறிகுறிகள்",secC:"C · குரல் தடை காரணிகள்",secCnote:"(பகுப்பாய்வு துல்லியத்தை பாதிக்கும்)",secD:"D · மருத்துவ வரலாறு",qa1:"வயது குழு",qa1opts:["30க்கு கீழ்","30–45","46–60","60+"],qa2:"உயிரியல் பாலினம்",qa2opts:["ஆண்","பெண்","மற்றவை"],qa3:"தாய்மொழி",qa3opts:["Hindi","English","தமிழ்","மற்றவை"],qb1:"ஓய்வில் கைகளில் நடுக்கம் உணர்ந்திருக்கிறீர்களா?",qb1opts:["இல்லை","அரிதாக","சில நேரம்","அடிக்கடி"],qb1note:"",qb2:"கையெழுத்து சிறிதாகிவிட்டதா?",qb2opts:["இல்லை","சற்று","ஆம்"],qb2note:"மைக்ரோகிராபியா — பார்கின்சன்னின் ஆரம்ப அறிகுறி",qb3:"பேசும்போது சரியான வார்த்தை சிரமம்?",qb3opts:["இல்லை","சில நேரம்","அடிக்கடி"],qb3note:"வார்த்தை கண்டுபிடிக்கும் சிரமம் — அல்சைமர் மதிப்பீட்டில்",qb4:"நினைவாற்றல் குறைபாடு அல்லது குழப்பம்?",qb4opts:["இல்லை","சில நேரம்","அடிக்கடி"],qb5:"குரல் மெதுவாக, கரடுமுரடாக மாறிவிட்டதா?",qb5opts:["இல்லை","சற்று","ஆம், தெளிவாக"],qb5note:"ஹைபோஃபோனியா — பார்கின்சன் மற்றும் ALS இரண்டிலும்",qb6:"திடீர் தசை பலவீனம் அல்லது முகம் தொங்குவது?",qb6opts:["இல்லை","முன்பு நடந்தது","இப்போது உள்ளது"],qb6note:"பக்கவாத எச்சரிக்கை அறிகுறி",qb7:"விழுங்குவதில் சிரமம்?",qb7opts:["இல்லை","சில நேரம்","அடிக்கடி"],qb7note:"டிஸ்ஃபேஜியா — ALS மற்றும் முன்னேறிய பார்கின்சன்",qc1:"தற்போது சளி, தொண்டை தொற்று உள்ளதா?",qc1opts:["இல்லை","லேசான அறிகுறிகள்","ஆம், செயலில்"],qc1note:"தீவிர நோய் குரல் ஒலியியலை மாற்றும்",qc2:"புகைபிடிக்கிறீர்களா?",qc2opts:["இல்லை","முன்பு","தற்போது"],qc2note:"புகைபிடித்தல் F0 ஐ குறைக்கிறது",qc3:"ஆஸ்துமா, COPD உள்ளதா?",qc3opts:["இல்லை","லேசான","தீவிரமான"],qc3note:"சுவாச நோய்கள் RMS மற்றும் HNR ஐ பாதிக்கும்",qc4:"தொண்டை அறுவை சிகிச்சை நடந்துள்ளதா?",qc4opts:["இல்லை","ஆம், 1 ஆண்டுக்கு முன்பு","ஆம், சமீபத்தில்"],qc4note:"குரல் நாணில் மாற்றங்கள் ஒலிவியல் அளவுருக்களை மாற்றும்",qc5:"குரல் பாதிக்கும் மருந்துகள் உட்கொள்கிறீர்களா?",qc5opts:["இல்லை","தெரியவில்லை","ஆம்"],qd1:"உறவினருக்கு பார்கின்சன் அல்லது அல்சைமர் உள்ளதா?",qd1opts:["இல்லை","பார்கின்சன்","அல்சைமர்","இரண்டும்"],qd1note:"குடும்ப வரலாறு மரபணு ஆபத்தை அதிகரிக்கிறது",qd2:"மனச்சோர்வு அல்லது பதட்டம் கண்டறியப்பட்டதா?",qd2opts:["இல்லை","முன்பு மட்டும்","தற்போது"],qd2note:"மனநல நிலைகள் பார்கின்சன்னின் ஆரம்ப அறிகுறிகள்",qd3:"உயர் இரத்த அழுத்தம் அல்லது நீரிழிவு?",qd3opts:["இல்லை","உயர் இரத்த அழுத்தம்","நீரிழிவு","இரண்டும்"],qd3note:"இரண்டும் பக்கவாத ஆபத்து காரணிகள்",qd4:"முன்பு பக்கவாதம் அல்லது TIA ஏற்பட்டதா?",qd4opts:["இல்லை","TIA மட்டும்","முழு பக்கவாதம்"],qd5:"ஏதேனும் நரம்பியல் நோய் கண்டறியப்பட்டதா?",qd5opts:["கண்டறியப்படவில்லை","மதிப்பீட்டில்","ஆம், கண்டறியப்பட்டது"],qd5note:"மாதிரி முடிவுகளை சரிசெய்ய முக்கியம்",s5btn:"என் குரலை பகுப்பாய்வு செய்யுங்கள் →",s6badge:"பகுப்பாய்வு முடிந்தது",s6name:"உங்கள் பரிசோதனை அறிக்கை",s6sub:"குரல் + கேள்வித்தாள் அடிப்படையில்",s6risklbl:"அபாய நிலைகள்",s6qs_lbl:"உங்கள் பதில்கள்",s6alerttitle:"மிதமான அபாயம்",s6alertbody:"பார்கின்சனுடன் தொடர்புடைய சில அறிகுறிகள் உள்ளன.",s6reftitle:"நரம்பியல் நிபுணரிடம் ஆலோசனை",s6refdesc:"அருகிலுள்ள நிபுணர்: 2.4 கி.மீ",s6refcta:"சந்திப்பு பதிவு →",s6disc:"பரிசோதனை கருவி, மருத்துவ நோயறிதல் அல்ல.",s6download:"தரவு தொகுப்பை பதிவிறக்கவும் (.zip)",s6downloadnote:"ஆடியோ + ஒலிவியல் அம்சங்கள் + கேள்வித்தாள்",diLearnMore:"மேலும் அறிய தட்டவும் ›",di_overview:"கண்ணோட்டம்",di_symptoms:"முக்கிய அறிகுறிகள்",di_screens:"NeuroVox என்ன பரிசோதிக்கிறது",dc_desc1:"குரல் நடுக்கம்",dc_desc2:"வார்த்தை கண்டுபிடிப்பு",dc_desc3:"உச்சரிப்பு",dc_desc4:"குரல் சோர்வு",lbl_live:"நேரடி குரல் அளவீடுகள்",lbl_pitch:"சுரம் (F0)",lbl_rms:"ஒலி அளவு (RMS)",lbl_sc:"நிறமாலை மையம்",lbl_zcr:"ZCR · ஒழுங்கின்மை",lbl_flux:"நிறமாலை மாற்றம்",lbl_rolloff:"நிறமாலை ரோலாஃப்",lbl_voiced:"குரல் சட்டங்கள்",lbl_stab:"சுர நிலைப்பாடு",lbl_frames:"சட்டங்கள்",vsc_pitch:"சராசரி சுரம் (F0)",vsc_rms:"ஒலி அளவு (RMS)",vsc_sc:"நிறமாலை மையம்",vsc_zcr:"ZCR",vsc_flux:"நிறமாலை மாற்றம்",vsc_stab:"சுர நிலைப்பாடு",vsc_dur:"கால அளவு",vsc_qual:"சமிக்ஞை தரம்",qual_good:"நல்ல சமிக்ஞை",qual_weak:"பலவீனமானது — சத்தமாக பேசுங்கள்",qual_bad:"மிகவும் அமைதியாக",dis_names:["பார்கின்சன்","அல்சைமர்","பக்கவாதம்","ALS","MS"],risk_elevated:"உயர்ந்த சமிக்ஞை கண்டறியப்பட்டது",risk_short:"பதிவு மிகவும் குறுகியது",risk_low:"குறைந்த அபாயம்",risk_short_body:"குறைந்தது 5 வினாடிகள் பேசவும்.",voiceAnalysisTitle:"உங்கள் குரல் பகுப்பாய்வு",voiceRawNote:"மூல ஒலிவியல் அளவீடுகள். ஆபத்து மதிப்பெண்கள் விதி அடிப்படையிலானவை."},
+  bn:{s1sub:"আপনার মস্তিষ্কের কণ্ঠস্বর",s1tagline:"কণ্ঠস্বর দিয়ে স্নায়বিক পরীক্ষা — বিনামূল্যে, বহুভাষিক।",s1btn:"শুরু করুন",s2title:"আপনার ভাষা বেছে নিন",s2sub:"NeuroVox ১২+ ভারতীয় ভাষায় কাজ করে",s2btn:"চালিয়ে যান →",s3greet:"শুভ সকাল,",s3name:"আবার স্বাগতম",s3streak:"শেষ পরীক্ষা: ৩ দিন আগে",s3scanlbl:"দ্রুত স্ক্যান",s3qsctitle:"ভয়েস স্ক্যান শুরু",s3qscsub:"৬০ সেকেন্ড · ৫টি রোগ",s3qscbtn:"শুরু করতে ট্যাপ করুন →",s3dislbl:"পরীক্ষিত রোগ",s3lastlbl:"শেষ ফলাফল",s3lsclbl:"পার্কিনসন ঝুঁকি",s3lscbadge:"কম ঝুঁকি",dis1:"পার্কিনসন",dis2:"আলঝেইমার",dis3:"স্ট্রোক",dis4:"ALS & MS",nb1:"হোম",nb2:"স্ক্যান",nb3:"ফলাফল",nb4:"প্রোফাইল",s4title:"ভয়েস স্ক্যান",s4tasknum:"কাজ ২ / ৩",s4tasktitle:"স্বরবর্ণ ধরে রাখুন",s4taskinst:'গভীর শ্বাস নিন এবং "আঃ" বলুন।',s4taskex:'"আঃঃঃঃঃ..." (৫–৮ সেকেন্ড)',s4tip:"💡 শান্ত জায়গা খুঁজুন। মাইক ট্যাপ করুন।",s4next:"পরবর্তী →",micstatus:"রেকর্ড করতে ট্যাপ করুন",s5title:"স্বাস্থ্য প্রশ্নাবলী",secA:"A · জনসংখ্যা",secB:"B · স্নায়বিক লক্ষণ",secC:"C · কণ্ঠস্বর বিভ্রান্তি কারণ",secCnote:"(বিশ্লেষণ নির্ভুলতার উপর প্রভাব)",secD:"D · চিকিৎসা ইতিহাস",qa1:"বয়স গ্রুপ",qa1opts:["৩০ এর নিচে","৩০–৪৫","৪৬–৬০","৬০+"],qa2:"জৈবিক লিঙ্গ",qa2opts:["পুরুষ","মহিলা","অন্যান্য"],qa3:"মাতৃভাষা",qa3opts:["হিন্দি","ইংরেজি","তামিল","অন্যান্য"],qb1:"বিশ্রামের সময় হাতে কম্পন?",qb1opts:["কখনো না","বিরলভাবে","কখনো কখনো","প্রায়ই"],qb1note:"",qb2:"হাতের লেখা ছোট হয়ে গেছে?",qb2opts:["না","সামান্য","হ্যাঁ"],qb2note:"মাইক্রোগ্রাফিয়া — পার্কিনসনের প্রারম্ভিক সূচক",qb3:"সঠিক শব্দ খুঁজে পেতে সমস্যা?",qb3opts:["কখনো না","কখনো কখনো","প্রায়ই"],qb3note:"শব্দ খুঁজে পেতে অসুবিধা — আলঝেইমার মূল্যায়নে",qb4:"স্মৃতিশক্তির অভাব বা বিভ্রান্তি?",qb4opts:["না","মাঝে মাঝে","প্রায়ই"],qb5:"কণ্ঠস্বর নরম বা কর্কশ হয়েছে?",qb5opts:["না","সামান্য","হ্যাঁ, স্পষ্টভাবে"],qb5note:"হাইপোফোনিয়া — পার্কিনসন এবং ALS উভয়ে",qb6:"হঠাৎ পেশী দুর্বলতা বা মুখ ঝুলে পড়া?",qb6opts:["কখনো না","আগে হয়েছিল","এখন আছে"],qb6note:"সম্ভাব্য স্ট্রোক সতর্কতা",qb7:"গিলতে অসুবিধা?",qb7opts:["না","মাঝে মাঝে","প্রায়ই"],qb7note:"ডিসফ্যাজিয়া — ALS এবং পার্কিনসনের বৈশিষ্ট্য",qc1:"এখন সর্দি বা গলার সংক্রমণ আছে?",qc1opts:["না","হালকা লক্ষণ","হ্যাঁ, সক্রিয়"],qc1note:"তীব্র অসুস্থতা ভয়েস অ্যাকউস্টিক্স পরিবর্তন করে",qc2:"ধূমপান করেন?",qc2opts:["কখনো না","আগে করতাম","এখন করি"],qc2note:"ধূমপান F0 কমায়",qc3:"অ্যাজমা বা COPD আছে?",qc3opts:["কোনোটি না","হালকা","গুরুতর"],qc3note:"শ্বাসযন্ত্রের অসুস্থতা RMS এবং HNR প্রভাবিত করে",qc4:"গলার অপারেশন হয়েছে?",qc4opts:["না","হ্যাঁ, ১ বছর আগে","হ্যাঁ, সম্প্রতি"],qc4note:"কাঠামোগত পরিবর্তন অ্যাকউস্টিক পরামিতি পরিবর্তন করে",qc5:"স্নায়ুতন্ত্র প্রভাবিত ওষুধ খাচ্ছেন?",qc5opts:["না","নিশ্চিত নই","হ্যাঁ"],qd1:"নিকটাত্মীয়ের পার্কিনসন বা আলঝেইমার?",qd1opts:["না","পার্কিনসন","আলঝেইমার","উভয়"],qd1note:"পারিবারিক ইতিহাস জিনগত ঝুঁকি বাড়ায়",qd2:"বিষণ্নতা বা উদ্বেগ নির্ণয় হয়েছে?",qd2opts:["না","আগে ছিল","এখন আছে"],qd2note:"মানসিক স্বাস্থ্য পার্কিনসনের প্রাথমিক লক্ষণ",qd3:"উচ্চ রক্তচাপ বা ডায়াবেটিস?",qd3opts:["কোনোটি না","উচ্চ রক্তচাপ","ডায়াবেটিস","উভয়"],qd3note:"স্ট্রোক-সম্পর্কিত ডিসার্থ্রিয়ার ঝুঁকির কারণ",qd4:"আগে স্ট্রোক বা TIA হয়েছে?",qd4opts:["না","শুধু TIA","সম্পূর্ণ স্ট্রোক"],qd5:"স্নায়বিক রোগ নির্ণয় হয়েছে?",qd5opts:["কোনো নির্ণয় নেই","মূল্যায়নে","হ্যাঁ, নির্ণয় হয়েছে"],qd5note:"মডেল আউটপুট ক্যালিব্রেট করতে গুরুত্বপূর্ণ",s5btn:"আমার কণ্ঠস্বর বিশ্লেষণ করুন →",s6badge:"বিশ্লেষণ সম্পূর্ণ",s6name:"আপনার পরীক্ষার রিপোর্ট",s6sub:"কণ্ঠস্বর বিশ্লেষণের উপর ভিত্তি করে",s6risklbl:"ঝুঁকির মাত্রা",s6qs_lbl:"আপনার উত্তর",s6alerttitle:"মাঝারি ঝুঁকি",s6alertbody:"প্রাথমিক পার্কিনসনের কিছু লক্ষণ রয়েছে।",s6reftitle:"নিউরোলজিস্টের সাথে পরামর্শ",s6refdesc:"নিকটতম বিশেষজ্ঞ: ২.৪ কিমি",s6refcta:"অ্যাপয়েন্টমেন্ট বুক করুন →",s6disc:"স্ক্রিনিং টুল, চিকিৎসা নির্ণয় নয়।",s6download:"ডেটা প্যাকেজ ডাউনলোড করুন (.zip)",s6downloadnote:"অডিও + অ্যাকউস্টিক বৈশিষ্ট্য + প্রশ্নাবলী",diLearnMore:"আরও জানতে ট্যাপ করুন ›",di_overview:"সংক্ষিপ্ত বিবরণ",di_symptoms:"প্রধান লক্ষণ",di_screens:"NeuroVox কী পরীক্ষা করে",dc_desc1:"কণ্ঠ কম্পন",dc_desc2:"শব্দ খোঁজা",dc_desc3:"উচ্চারণ",dc_desc4:"কণ্ঠ ক্লান্তি",lbl_live:"লাইভ ভয়েস মেট্রিক্স",lbl_pitch:"পিচ (F0)",lbl_rms:"তীব্রতা (RMS)",lbl_sc:"স্পেকট্রাল সেন্ট্রয়েড",lbl_zcr:"ZCR · অনিয়মিততা",lbl_flux:"স্পেকট্রাল ফ্লাক্স",lbl_rolloff:"স্পেকট্রাল রোলঅফ",lbl_voiced:"কণ্ঠ ফ্রেম",lbl_stab:"পিচ স্থিতিশীলতা",lbl_frames:"ফ্রেম",vsc_pitch:"গড় পিচ (F0)",vsc_rms:"তীব্রতা (RMS)",vsc_sc:"স্পেকট্রাল সেন্ট্রয়েড",vsc_zcr:"ZCR",vsc_flux:"স্পেকট্রাল ফ্লাক্স",vsc_stab:"পিচ স্থিতিশীলতা",vsc_dur:"সময়কাল",vsc_qual:"সংকেত মান",qual_good:"ভালো সংকেত",qual_weak:"দুর্বল — জোরে বলুন",qual_bad:"খুব শান্ত",dis_names:["পার্কিনসন","আলঝেইমার","স্ট্রোক","ALS","MS"],risk_elevated:"উচ্চ সংকেত সনাক্ত",risk_short:"রেকর্ডিং অনেক ছোট",risk_low:"কম ঝুঁকি",risk_short_body:"অনুগ্রহ করে কমপক্ষে 5 সেকেন্ড কথা বলুন।",voiceAnalysisTitle:"আপনার ভয়েস বিশ্লেষণ",voiceRawNote:"কাঁচা অ্যাকউস্টিক পরিমাপ। ঝুঁকি স্কোর নিয়ম-ভিত্তিক অনুমান।"},
+  te:{s1sub:"మీ మెదడు స్వరం",s1tagline:"మీ గొంతుతో న్యూరలాజికల్ స్క్రీనింగ్ — ఉచిత, బహుభాషా.",s1btn:"ప్రారంభించండి",s2title:"మీ భాషను ఎంచుకోండి",s2sub:"NeuroVox 12+ భారతీయ భాషలలో పని చేస్తుంది",s2btn:"కొనసాగించండి →",s3greet:"శుభోదయం,",s3name:"తిరిగి స్వాగతం",s3streak:"చివరి స్కాన్: 3 రోజుల క్రితం",s3scanlbl:"త్వరిత స్కాన్",s3qsctitle:"వాయిస్ స్కాన్ ప్రారంభించండి",s3qscsub:"60 సెకన్లు · 5 రుగ్మతలు",s3qscbtn:"ప్రారంభించడానికి నొక్కండి →",s3dislbl:"పరీక్షించబడే రుగ్మతలు",s3lastlbl:"చివరి ఫలితం",s3lsclbl:"పార్కిన్సన్ ప్రమాదం",s3lscbadge:"తక్కువ ప్రమాదం",dis1:"పార్కిన్సన్",dis2:"అల్జీమర్స్",dis3:"స్ట్రోక్",dis4:"ALS & MS",nb1:"హోమ్",nb2:"స్కాన్",nb3:"ఫలితాలు",nb4:"ప్రొఫైల్",s4title:"వాయిస్ స్కాన్",s4tasknum:"పని 2 / 3",s4tasktitle:"స్వరాన్ని నిలబెట్టండి",s4taskinst:'"ఆఆఆ" అని స్థిరమైన స్వరంతో చెప్పండి.',s4taskex:'"ఆఆఆఆఆ..." (5–8 సెకన్లు)',s4tip:"💡 నిశ్శబ్ద ప్రదేశం ఎంచుకోండి. మైక్ నొక్కండి.",s4next:"తదుపరి →",micstatus:"రికార్డ్ చేయడానికి నొక్కండి",s5title:"ఆరోగ్య ప్రశ్నాపత్రం",secA:"A · జనాభా",secB:"B · నాడీవ్యవస్థ లక్షణాలు",secC:"C · వాయిస్ తికమకపెట్టే కారకాలు",secCnote:"(విశ్లేషణ ఖచ్చితత్వాన్ని ప్రభావితం చేస్తుంది)",secD:"D · వైద్య చరిత్ర",qa1:"వయసు సమూహం",qa1opts:["30 కంటే తక్కువ","30–45","46–60","60+"],qa2:"జీవసంబంధమైన లింగం",qa2opts:["పురుషుడు","స్త్రీ","ఇతరులు"],qa3:"మాతృభాష",qa3opts:["హిందీ","ఆంగ్లం","తమిళం","ఇతరులు"],qb1:"విశ్రాంతి సమయంలో చేతులు వణికాయా?",qb1opts:["ఎప్పుడూ లేదు","అరుదుగా","కొన్నిసార్లు","తరచుగా"],qb1note:"",qb2:"చేతిరాత చిన్నదిగా మారిందా?",qb2opts:["లేదు","కొంచెం","అవును"],qb2note:"మైక్రోగ్రాఫియా — పార్కిన్సన్ ప్రారంభ సూచిక",qb3:"మాట్లాడేటప్పుడు సరైన మాట కష్టంగా ఉందా?",qb3opts:["ఎప్పుడూ లేదు","కొన్నిసార్లు","తరచుగా"],qb3note:"పదం కనుగొనడంలో ఇబ్బంది — అల్జీమర్స్ అంచనాలో",qb4:"జ్ఞాపకశక్తి లోపం లేదా గందరగోళం?",qb4opts:["లేదు","అప్పుడప్పుడు","తరచుగా"],qb5:"గొంతు మెత్తగా, కర్కశంగా మారిందా?",qb5opts:["లేదు","కొంచెం","అవును, స్పష్టంగా"],qb5note:"హైపోఫోనియా — పార్కిన్సన్ మరియు ALS రెండింటిలో",qb6:"హఠాత్తుగా కండరాల బలహీనత?",qb6opts:["ఎప్పుడూ లేదు","గతంలో","ఇప్పుడు ఉంది"],qb6note:"స్ట్రోక్ హెచ్చరిక సంకేతం",qb7:"మింగడంలో ఇబ్బంది?",qb7opts:["లేదు","అప్పుడప్పుడు","తరచుగా"],qb7note:"డిస్ఫాగియా — ALS మరియు పార్కిన్సన్ లక్షణం",qc1:"ప్రస్తుతం జలుబు లేదా గొంతు సంక్రమణ?",qc1opts:["లేదు","తేలికపాటి","అవును, చురుకుగా"],qc1note:"తీవ్రమైన అనారోగ్యం వాయిస్ అకౌస్టిక్స్ మారుస్తుంది",qc2:"పొగతాగుతున్నారా?",qc2opts:["ఎప్పుడూ లేదు","గతంలో","ప్రస్తుతం"],qc2note:"ధూమపానం F0 ని తగ్గిస్తుంది",qc3:"ఆస్థమా లేదా COPD ఉందా?",qc3opts:["ఏదీ లేదు","తేలికపాటి","తీవ్రమైన"],qc3note:"శ్వాసకోశ అనారోగ్యం RMS మరియు HNR ని ప్రభావితం చేస్తుంది",qc4:"గొంతు శస్త్రచికిత్స జరిగిందా?",qc4opts:["లేదు","అవును, 1 సంవత్సరం క్రితం","అవును, ఇటీవల"],qc4note:"స్వరపేటికలో మార్పులు అకౌస్టిక్ పారామీటర్లు మారుస్తాయి",qc5:"వాయిస్ పాతిక్కే మందులు తీసుకుంటున్నారా?",qc5opts:["లేదు","తెలియదు","అవును"],qd1:"బంధువులకు పార్కిన్సన్ లేదా అల్జీమర్స్?",qd1opts:["లేదు","పార్కిన్సన్","అల్జీమర్స్","రెండూ"],qd1note:"కుటుంబ చరిత్ర జన్యు ప్రమాదాన్ని పెంచుతుంది",qd2:"నిరాశ లేదా ఆందోళన నిర్ధారించబడిందా?",qd2opts:["లేదు","గతంలో","ప్రస్తుతం"],qd2note:"మానసిక ఆరోగ్య పరిస్థితులు పార్కిన్సన్ ప్రారంభ లక్షణాలు",qd3:"అధిక రక్తపోటు లేదా మధుమేహం?",qd3opts:["ఏదీ లేదు","అధిక రక్తపోటు","మధుమేహం","రెండూ"],qd3note:"స్ట్రోక్-సంబంధిత డిసార్థ్రియాకు ప్రమాద కారకాలు",qd4:"గతంలో స్ట్రోక్ లేదా TIA వచ్చిందా?",qd4opts:["లేదు","TIA మాత్రమే","పూర్తి స్ట్రోక్"],qd5:"న్యూరోలాజికల్ రోగ నిర్ధారణ అందుకున్నారా?",qd5opts:["నిర్ధారణ లేదు","మూల్యాంకనంలో","అవును, నిర్ధారించబడింది"],qd5note:"మోడల్ ఔట్‌పుట్‌లను క్రమాంకనం చేయడానికి ముఖ్యమైనది",s5btn:"నా వాయిస్ విశ్లేషించండి →",s6badge:"విశ్లేషణ పూర్తైంది",s6name:"మీ స్క్రీనింగ్ నివేదిక",s6sub:"వాయిస్ విశ్లేషణ ఆధారంగా",s6risklbl:"ప్రమాద స్థాయిలు",s6qs_lbl:"మీ సమాధానాలు",s6alerttitle:"మధ్యస్థ ప్రమాదం",s6alertbody:"ప్రారంభ పార్కిన్సన్‌తో సంబంధిత సూచికలు ఉన్నాయి.",s6reftitle:"న్యూరాలజిస్ట్ సందర్శన",s6refdesc:"సమీప నిపుణుడు: 2.4 కి.మీ",s6refcta:"అపాయింట్‌మెంట్ బుక్ చేయండి →",s6disc:"స్క్రీనింగ్ సాధనం, వైద్య నిర్ధారణ కాదు.",s6download:"డేటా ప్యాకేజీ డౌన్‌లోడ్ (.zip)",s6downloadnote:"ఆడియో + అకౌస్టిక్ లక్షణాలు + ప్రశ్నాపత్రం",diLearnMore:"మరిన్ని తెలుసుకోవడానికి నొక్కండి ›",di_overview:"సంక్షిప్త వివరణ",di_symptoms:"ప్రధాన లక్షణాలు",di_screens:"NeuroVox ఏమి పరీక్షిస్తుంది",dc_desc1:"వాయిస్ వణుకు",dc_desc2:"పదం కనుగొనడం",dc_desc3:"ఉచ్చారణ",dc_desc4:"వాయిస్ అలసట",lbl_live:"లైవ్ వాయిస్ కొలతలు",lbl_pitch:"పిచ్ (F0)",lbl_rms:"సౌండ్ లెవెల్ (RMS)",lbl_sc:"స్పెక్ట్రల్ సెంట్రాయిడ్",lbl_zcr:"ZCR · అక్రమత",lbl_flux:"స్పెక్ట్రల్ ఫ్లక్స్",lbl_rolloff:"స్పెక్ట్రల్ రోలాఫ్",lbl_voiced:"వాయిస్ ఫ్రేమ్‌లు",lbl_stab:"పిచ్ స్థిరత్వం",lbl_frames:"ఫ్రేమ్‌లు",vsc_pitch:"సగటు పిచ్ (F0)",vsc_rms:"సౌండ్ లెవెల్ (RMS)",vsc_sc:"స్పెక్ట్రల్ సెంట్రాయిడ్",vsc_zcr:"ZCR",vsc_flux:"స్పెక్ట్రల్ ఫ్లక్స్",vsc_stab:"పిచ్ స్థిరత్వం",vsc_dur:"వ్యవధి",vsc_qual:"సిగ్నల్ నాణ్యత",qual_good:"మంచి సిగ్నల్",qual_weak:"బలహీనం — గట్టిగా మాట్లాడండి",qual_bad:"చాలా నిశ్శబ్దం",dis_names:["పార్కిన్సన్","అల్జీమర్స్","స్ట్రోక్","ALS","MS"],risk_elevated:"ఎలివేటెడ్ సిగ్నల్ గుర్తించబడింది",risk_short:"రికార్డింగ్ చాలా తక్కువ",risk_low:"తక్కువ ప్రమాదం",risk_short_body:"దయచేసి కనీసం 5 సెకన్లు మాట్లాడండి.",voiceAnalysisTitle:"మీ వాయిస్ విశ్లేషణ",voiceRawNote:"ముడి అకౌస్టిక్ కొలతలు. ప్రమాద స్కోర్లు నియమ-ఆధారిత అంచనాలు."},
+  mr:{s1sub:"तुमच्या मेंदूचा आवाज",s1tagline:"आवाजाने न्यूरोलॉजिकल तपासणी — मोफत, बहुभाषिक.",s1btn:"सुरू करा",s2title:"तुमची भाषा निवडा",s2sub:"NeuroVox 12+ भारतीय भाषांमध्ये काम करते",s2btn:"पुढे जा →",s3greet:"सुप्रभात,",s3name:"पुन्हा स्वागत",s3streak:"शेवटची तपासणी: 3 दिवसांपूर्वी",s3scanlbl:"जलद स्कॅन",s3qsctitle:"व्हॉइस स्कॅन सुरू करा",s3qscsub:"60 सेकंद · 5 विकार",s3qscbtn:"सुरू करण्यासाठी टॅप करा →",s3dislbl:"तपासलेले विकार",s3lastlbl:"शेवटचा निकाल",s3lsclbl:"पार्किन्सन धोका",s3lscbadge:"कमी धोका",dis1:"पार्किन्सन",dis2:"अल्झायमर",dis3:"स्ट्रोक",dis4:"ALS & MS",nb1:"होम",nb2:"स्कॅन",nb3:"निकाल",nb4:"प्रोफाइल",s4title:"व्हॉइस स्कॅन",s4tasknum:"कार्य 2 / 3",s4tasktitle:"स्वर टिकवून ठेवा",s4taskinst:'"आऽऽ" असे शक्य तितका वेळ बोला.',s4taskex:'"आऽऽऽऽ..." (5–8 सेकंद)',s4tip:"💡 शांत जागा निवडा. मायक्रोफोन टॅप करा.",s4next:"पुढील कार्य →",micstatus:"रेकॉर्ड करण्यासाठी टॅप करा",s5title:"आरोग्य प्रश्नावली",secA:"A · लोकसंख्याशास्त्र",secB:"B · न्यूरोलॉजिकल लक्षणे",secC:"C · आवाजावर परिणाम करणारे घटक",secCnote:"(विश्लेषण अचूकतेवर परिणाम)",secD:"D · वैद्यकीय इतिहास",qa1:"वयोगट",qa1opts:["30 पेक्षा कमी","30–45","46–60","60+"],qa2:"जैविक लिंग",qa2opts:["पुरुष","स्त्री","इतर"],qa3:"मातृभाषा",qa3opts:["हिंदी","इंग्रजी","तमिळ","इतर"],qb1:"विश्रांतीत हातांमध्ये थरथर जाणवली का?",qb1opts:["कधीच नाही","क्वचित","कधी कधी","अनेकदा"],qb1note:"",qb2:"हस्तलेखन लहान झाली आहे का?",qb2opts:["नाही","थोडी","हो"],qb2note:"मायक्रोग्राफिया — पार्किन्सनचे प्रारंभिक चिन्ह",qb3:"बोलताना योग्य शब्द शोधणे कठीण?",qb3opts:["कधीच नाही","कधी कधी","अनेकदा"],qb3note:"शब्द शोधण्यात अडचण — अल्झायमर मूल्यांकनात",qb4:"स्मृती कमी होणे किंवा गोंधळ?",qb4opts:["नाही","कधी कधी","अनेकदा"],qb5:"आवाज मंद, कर्कश झाला आहे का?",qb5opts:["नाही","थोडा","हो, स्पष्टपणे"],qb5note:"हायपोफोनिया — पार्किन्सन आणि ALS दोन्हींमध्ये",qb6:"अचानक स्नायू कमकुवत होणे?",qb6opts:["कधीच नाही","आधी झाले होते","आता आहे"],qb6note:"संभाव्य स्ट्रोक चेतावणी चिन्ह",qb7:"गिळण्यास त्रास होतो का?",qb7opts:["नाही","कधी कधी","अनेकदा"],qb7note:"डिस्फेगिया — ALS आणि प्रगत पार्किन्सन",qc1:"सध्या सर्दी किंवा घशाचा संसर्ग?",qc1opts:["नाही","सौम्य लक्षणे","हो, सक्रिय"],qc1note:"तीव्र आजार आवाजाचे ध्वनिशास्त्र बदलतो",qc2:"धूम्रपान करता का?",qc2opts:["कधीच नाही","पूर्वी करायचो","सध्या करतो"],qc2note:"धूम्रपान F0 कमी करते",qc3:"दमा, COPD आहे का?",qc3opts:["काहीच नाही","सौम्य","गंभीर"],qc3note:"श्वासाचे आजार RMS आणि HNR वर परिणाम करतात",qc4:"घशाची शस्त्रक्रिया झाली आहे का?",qc4opts:["नाही","हो, 1 वर्षापूर्वी","हो, अलीकडेच"],qc4note:"स्वरयंत्रातील बदल ध्वनिक मापदंड कायमचे बदलतात",qc5:"आवाजावर परिणाम करणारी औषधे घेत आहात?",qc5opts:["नाही","माहीत नाही","हो"],qd1:"जवळच्या नातेवाईकाला पार्किन्सन किंवा अल्झायमर?",qd1opts:["नाही","पार्किन्सन","अल्झायमर","दोन्ही"],qd1note:"कौटुंबिक इतिहास अनुवांशिक धोका वाढवतो",qd2:"नैराश्य किंवा चिंता निदान झाले आहे का?",qd2opts:["नाही","आधी फक्त","सध्या"],qd2note:"मानसिक आरोग्य स्थिती पार्किन्सनची प्रारंभिक लक्षणे",qd3:"उच्च रक्तदाब किंवा मधुमेह?",qd3opts:["दोन्ही नाही","उच्च रक्तदाब","मधुमेह","दोन्ही"],qd3note:"स्ट्रोक-संबंधित डिसार्थ्रियाचे जोखीम घटक",qd4:"आधी स्ट्रोक किंवा TIA झाला का?",qd4opts:["नाही","फक्त TIA","पूर्ण स्ट्रोक"],qd5:"न्यूरोलॉजिकल निदान मिळाले आहे का?",qd5opts:["कोणते नाही","मूल्यांकनाधीन","हो, निदान झाले"],qd5note:"मॉडेल आउटपुट कॅलिब्रेट करण्यासाठी महत्त्वाचे",s5btn:"माझ्या आवाजाचे विश्लेषण करा →",s6badge:"विश्लेषण पूर्ण",s6name:"तुमचा तपासणी अहवाल",s6sub:"आवाज विश्लेषणावर आधारित",s6risklbl:"धोक्याचे स्तर",s6qs_lbl:"तुमची उत्तरे",s6alerttitle:"मध्यम धोका",s6alertbody:"सुरुवातीच्या पार्किन्सनशी संबंधित निर्देशक आढळले.",s6reftitle:"न्यूरोलॉजिस्टची भेट",s6refdesc:"जवळचे तज्ज्ञ: 2.4 किमी दूर",s6refcta:"भेट बुक करा →",s6disc:"तपासणी साधन आहे, वैद्यकीय निदान नाही.",s6download:"डेटा पॅकेज डाउनलोड करा (.zip)",s6downloadnote:"ऑडिओ + ध्वनिक वैशिष्ट्ये + प्रश्नावली",diLearnMore:"अधिक जाणून घेण्यासाठी टॅप करा ›",di_overview:"आढावा",di_symptoms:"प्रमुख लक्षणे",di_screens:"NeuroVox काय तपासते",dc_desc1:"आवाज थरथर",dc_desc2:"शब्द शोध",dc_desc3:"उच्चार",dc_desc4:"आवाज थकवा",lbl_live:"लाइव्ह आवाज मेट्रिक्स",lbl_pitch:"पिच (F0)",lbl_rms:"तीव्रता (RMS)",lbl_sc:"स्पेक्ट्रल सेंट्रॉइड",lbl_zcr:"ZCR · अनियमितता",lbl_flux:"स्पेक्ट्रल फ्लक्स",lbl_rolloff:"स्पेक्ट्रल रोलऑफ",lbl_voiced:"स्वर फ्रेम",lbl_stab:"पिच स्थिरता",lbl_frames:"फ्रेम",vsc_pitch:"सरासरी पिच (F0)",vsc_rms:"तीव्रता (RMS)",vsc_sc:"स्पेक्ट्रल सेंट्रॉइड",vsc_zcr:"ZCR",vsc_flux:"स्पेक्ट्रल फ्लक्स",vsc_stab:"पिच स्थिरता",vsc_dur:"कालावधी",vsc_qual:"संकेत गुणवत्ता",qual_good:"चांगला संकेत",qual_weak:"कमकुवत — मोठ्याने बोला",qual_bad:"खूप शांत",dis_names:["पार्किन्सन","अल्झायमर","स्ट्रोक","ALS","MS"],risk_elevated:"उच्च संकेत आढळला",risk_short:"रेकॉर्डिंग खूप कमी",risk_low:"कमी धोका",risk_short_body:"कृपया किमान 5 सेकंद बोला.",voiceAnalysisTitle:"तुमचे आवाज विश्लेषण",voiceRawNote:"कच्ची ध्वनिक मोजमाप. जोखीम स्कोअर नियम-आधारित अंदाज."}
+};
+
+function applyLang(lang){
+  const L=LANGS[lang];if(!L)return;
+  const s=(id,v)=>{const e=document.getElementById(id);if(e&&v!==undefined)e.textContent=v;};
+  s('s1-sub',L.s1sub);s('s1-tagline',L.s1tagline);s('s1-btn',L.s1btn);
+  s('s2-title',L.s2title);s('s2-sub',L.s2sub);s('s2-btn',L.s2btn);
+  s('s3-greet',L.s3greet);s('s3-name',L.s3name);s('s3-streak',L.s3streak);
+  s('s3-scan-lbl',L.s3scanlbl);s('s3-qsc-title',L.s3qsctitle);s('s3-qsc-sub',L.s3qscsub);
+  s('s3-qsc-btn',L.s3qscbtn);s('s3-dis-lbl',L.s3dislbl);s('s3-last-lbl',L.s3lastlbl);
+  s('s3-lsc-lbl',L.s3lsclbl);s('s3-lsc-badge',L.s3lscbadge);
+  s('dis1',L.dis1);s('dis2',L.dis2);s('dis3',L.dis3);s('dis4',L.dis4);
+  s('nb1',L.nb1);s('nb2',L.nb2);s('nb3',L.nb3);s('nb4',L.nb4);
+  s('dcd1',L.dc_desc1);s('dcd2',L.dc_desc2);s('dcd3',L.dc_desc3);s('dcd4',L.dc_desc4);
+  s('learn1',L.diLearnMore);s('learn2',L.diLearnMore);s('learn3',L.diLearnMore);s('learn4',L.diLearnMore);
+  s('s4-title',L.s4title);s('s4-task-num',L.s4tasknum);s('s4-task-title',L.s4tasktitle);
+  s('s4-task-inst',L.s4taskinst);s('s4-task-ex',L.s4taskex);
+  s('s4-tip',L.s4tip);s('s4-next',L.s4next);s('micStatus',L.micstatus);
+  s('s5-title',L.s5title);s('s5-btn',L.s5btn);
+  rebuildQuestionnaire(L);
+  s('s6-badge',L.s6badge);s('s6-name',L.s6name);s('s6-sub',L.s6sub);
+  s('s6-risk-lbl',L.s6risklbl);s('s6-qs-lbl',L.s6qs_lbl);
+  s('s6-alert-title',L.s6alerttitle);s('s6-alert-body',L.s6alertbody);
+  s('s6-ref-title',L.s6reftitle);s('s6-ref-desc',L.s6refdesc);s('s6-ref-cta',L.s6refcta);
+  s('s6-disc',L.s6disc);s('s6-download-btn',L.s6download);s('s6-download-note',L.s6downloadnote);
+  s('vs-title',L.voiceAnalysisTitle);s('vs-note',L.voiceRawNote);
+  s('lbl-live-metrics',L.lbl_live);
+  s('lbl-pitch',L.lbl_pitch);s('lbl-rms',L.lbl_rms);s('lbl-sc',L.lbl_sc);
+  s('lbl-zcr',L.lbl_zcr);s('lbl-flux',L.lbl_flux);s('lbl-rolloff',L.lbl_rolloff);
+  s('lbl-voiced',L.lbl_voiced);s('lbl-stab',L.lbl_stab);s('lbl-frames-unit',L.lbl_frames);
+  s('vsc-pitch',L.vsc_pitch);s('vsc-rms',L.vsc_rms);s('vsc-sc',L.vsc_sc);
+  s('vsc-zcr',L.vsc_zcr);s('vsc-flux',L.vsc_flux);s('vsc-stab',L.vsc_stab);
+  s('vsc-dur-lbl',L.vsc_dur);s('vsc-qual-lbl',L.vsc_qual);
+}
+
+/* ─── FULLSCREEN ──────────────────────────────────────────── */
+function toggleFullscreen(){
+  const body=document.body;
+  const isFs=body.classList.contains('fs-mode');
+  if(!isFs){
+    // Try native fullscreen first (works on Android Chrome)
+    const el=document.documentElement;
+    if(el.requestFullscreen){el.requestFullscreen().catch(()=>{});}
+    else if(el.webkitRequestFullscreen){el.webkitRequestFullscreen();}
+    body.classList.add('fs-mode');
+    document.getElementById('fsIcon').innerHTML='<path d="M8 3H3v5M12 3h5v5M8 17H3v-5M12 17h5v-5"/>';
+  } else {
+    if(document.exitFullscreen&&document.fullscreenElement){document.exitFullscreen().catch(()=>{});}
+    else if(document.webkitExitFullscreen&&document.webkitFullscreenElement){document.webkitExitFullscreen();}
+    body.classList.remove('fs-mode');
+    document.getElementById('fsIcon').innerHTML='<path d="M3 8V3h5M17 8V3h-5M3 12v5h5M17 12v5h-5"/>';
+  }
+}
+// Sync button state with native fullscreen changes (e.g. pressing Esc)
+document.addEventListener('fullscreenchange',()=>{
+  if(!document.fullscreenElement)document.body.classList.remove('fs-mode');
+});
+
+applyLang('en');
+
+</script>
+</body>
+</html>
